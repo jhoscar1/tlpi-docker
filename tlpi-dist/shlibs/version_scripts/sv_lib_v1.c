@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -13,4 +13,4 @@
 */
 #include <stdio.h>
 
-void xyz(void) { printf("v1 xyz()\n"); }
+void xyz(void) { printf("v1 xyz\n"); }

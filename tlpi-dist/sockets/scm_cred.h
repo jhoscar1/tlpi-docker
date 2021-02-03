@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -15,7 +15,7 @@
    Header file used by scm_cred_send.c and scm_cred_recv.c.
 */
 #define _GNU_SOURCE             /* To get SCM_CREDENTIALS definition from
-                                   <sys/sockets.h> */
+                                   <sys/socket.h> */
 #include <sys/socket.h>
 #include <sys/un.h>
 #include "unix_sockets.h"       /* Declares our socket functions */

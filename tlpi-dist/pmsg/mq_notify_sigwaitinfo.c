@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -104,6 +104,7 @@ main(int argc, char *argv[])
 
         while ((numRead = mq_receive(mqd, buffer, attr.mq_msgsize, NULL)) >= 0)
             printf("Read %ld bytes\n", (long) numRead);
+            /*FIXME: above: should use %zd here, and remove (long) cast */
 
         if (errno != EAGAIN)            /* Unexpected error */
             errExit("mq_receive");

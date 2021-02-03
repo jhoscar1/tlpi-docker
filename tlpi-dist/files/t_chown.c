@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -52,7 +52,7 @@ main(int argc, char *argv[])
     } else {                                    /* Turn group name into GID */
         gid = groupIdFromName(argv[2]);
         if (gid == -1)
-            fatal("No group user (%s)", argv[1]);
+            fatal("No group user (%s)", argv[2]);
     }
 
     /* Change ownership of all files named in remaining arguments */

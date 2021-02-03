@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -24,7 +24,7 @@ static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 static int avail = 0;
 
 static void *
-threadFunc(void *arg)
+producer(void *arg)
 {
     int cnt = atoi((char *) arg);
     int s, j;
@@ -71,7 +71,7 @@ main(int argc, char *argv[])
     for (j = 1; j < argc; j++) {
         totRequired += atoi(argv[j]);
 
-        s = pthread_create(&tid, NULL, threadFunc, argv[j]);
+        s = pthread_create(&tid, NULL, producer, argv[j]);
         if (s != 0)
             errExitEN(s, "pthread_create");
     }

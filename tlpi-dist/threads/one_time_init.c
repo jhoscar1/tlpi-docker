@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -23,9 +23,9 @@ struct once_struct {            /* Our equivalent of pthread_once_t */
     int called;
 };
 
-#define ONCE_INITIALISER { PTHREAD_MUTEX_INITIALIZER, 0 }
+#define ONCE_INITIALIZER { PTHREAD_MUTEX_INITIALIZER, 0 }
 
-struct once_struct once = ONCE_INITIALISER;
+struct once_struct once = ONCE_INITIALIZER;
 
 static int
 one_time_init(struct once_struct *once_control, void (*init)(void))

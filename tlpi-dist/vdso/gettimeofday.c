@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -63,14 +63,14 @@ int
 main(int argc, char *argv[])
 {
     struct timeval curr;
-    long lim, j;
+    long lim;
 
     if (argc < 2 || strcmp(argv[1], "--help") == 0)
         usageErr("%s loop-count\n", argv[0]);
 
     lim = atoi(argv[1]);
 
-    for (j = 0; j < lim; j++) {
+    for (int j = 0; j < lim; j++) {
 #ifdef USE_SYSCALL
         if (syscall(__NR_gettimeofday, &curr, NULL) == -1)
             errExit("gettimeofday");

@@ -14,7 +14,7 @@ clean :
 	${RM} ${EXE} *.o
 
 check_password : check_password.o
-	${CC} -o $@ check_password.o ${LDFLAGS} ${LDLIBS} ${LINUX_LIBCRYPT}
+	${CC} -o $@ check_password.o ${LDFLAGS} ${IMPL_LDLIBS} ${LINUX_LIBCRYPT}
 
 showall :
 	@ echo ${EXE}

@@ -170,3 +170,9 @@ to topics NOT covered in TLPI):
 
 namespaces      Code examples for namespaces, mainly related to my LWN.net
                 article series starting at https://lwn.net/Articles/531114/
+
+seccomp         Code examples demonstrating the use of the seccomp
+                (Secure Computing) facility.
+
+vdso            Some example code relating to the VDSO (Virtual Dynamic
+                Shared Object); see vdso(7)

@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU Lesser General Public License as published   *
@@ -66,7 +66,14 @@ outputError(Boolean useErr, int err, Boolean flushStdout,
     else
         snprintf(errText, BUF_SIZE, ":");
 
+#if __GNUC__ >= 7
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
     snprintf(buf, BUF_SIZE, "ERROR%s %s\n", errText, userMsg);
+#if __GNUC__ >= 7
+#pragma GCC diagnostic pop
+#endif
 
     if (flushStdout)
         fflush(stdout);       /* Flush any pending stdout */

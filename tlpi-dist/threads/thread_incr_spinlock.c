@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -27,9 +27,9 @@ static void *                   /* Loop 'arg' times incrementing 'glob' */
 threadFunc(void *arg)
 {
     int loops = *((int *) arg);
-    int loc, j, s;
+    int loc, s;
 
-    for (j = 0; j < loops; j++) {
+    for (int j = 0; j < loops; j++) {
         s = pthread_spin_lock(&splock);
         if (s != 0)
             errExitEN(s, "pthread_spin_lock");

@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -14,10 +14,10 @@
 
    Usage: cap_text "textual-cap-set"
 
-   The goal of this program is to help the user to the text-form capabilities
-   notation that is used by commands such as setcap(1) and getcap(1)). The
-   program allows the user to supply a text-form capability string which it
-   then converts and displays as "bit-wise" capability sets.
+   The goal of this program is to help the user to understand the text-form
+   capabilities notation that is used by commands such as setcap(1) and
+   getcap(1)). The program allows the user to supply a text-form capability
+   string which it then converts and displays as "bit-wise" capability sets.
 
    This program uses cap_from_text(3) to convert the "textual-cap-set"
    supplied as a command-line argument to the internal capabilities
@@ -36,7 +36,7 @@
 #define PRCAP_SHOW_ALL          0x01    /* Also display capabilities that
                                            are not enabled in any set */
 #define PRCAP_SHOW_UNRECOGNIZED 0x02    /* Display capabilities that are
-                                           unrecogniized by libcap */
+                                           unrecognized by libcap */
 
 static int
 capIsSet(cap_t capSets, cap_value_t cap, cap_flag_t set)
@@ -68,7 +68,7 @@ capIsInheritable(cap_t capSets, cap_value_t cap)
 }
 
 /* Print a line indicating whether the capability 'cap' is in the
-   permitted, effetive, and inherited sets of the capabilities state
+   permitted, effective, and inheritable sets of the capabilities state
    provided in 'capSets'.
 */
 static void

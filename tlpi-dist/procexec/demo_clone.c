@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -30,6 +30,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <sched.h>
+#include <sys/mman.h>
 #include "print_wait_status.h"
 #include "tlpi_hdr.h"
 
@@ -140,9 +141,11 @@ main(int argc, char *argv[])
 
     /* Allocate stack for child */
 
-    stack = malloc(STACK_SIZE);
-    if (stack == NULL)
-        errExit("malloc");
+    stack = mmap(NULL, STACK_SIZE, PROT_READ | PROT_WRITE,
+                 MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
+    if (stack == MAP_FAILED)
+        errExit("mmap");
+
     stackTop = stack + STACK_SIZE;  /* Assume stack grows downward */
 
     /* Establish handler to catch child termination signal */

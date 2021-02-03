@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/mman.h>
 
 /* A simple error-handling function: print an error message based
    on the value in 'errno' and terminate the calling process */
@@ -63,24 +64,24 @@ main(int argc, char *argv[])
 {
     pid_t child_pid;
     struct utsname uts;
-    char *child_stack;
+    char *stack;
 
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <child-hostname>\n", argv[0]);
         exit(EXIT_SUCCESS);
     }
 
-    child_stack = malloc(STACK_SIZE);
-    if (child_stack == NULL)
-        errExit("malloc");
+    stack = mmap(NULL, STACK_SIZE, PROT_READ | PROT_WRITE,
+                 MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
+    if (stack == MAP_FAILED)
+        errExit("mmap");
 
     /* Create a child that has its own UTS namespace;
        the child commences execution in childFunc() */
 
     child_pid = clone(childFunc,
-                    child_stack + STACK_SIZE,   /* Points to start of
-                                                   downwardly growing stack */
-                    CLONE_NEWUTS | SIGCHLD, argv[1]);
+                      stack + STACK_SIZE, /* Assume stack grows downward */
+                      CLONE_NEWUTS | SIGCHLD, argv[1]);
     if (child_pid == -1)
         errExit("clone");
     printf("PID of child created by clone() is %ld\n", (long) child_pid);

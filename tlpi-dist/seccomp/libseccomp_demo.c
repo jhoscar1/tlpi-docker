@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
     seccomp_export_pfc(ctx, 5);
     seccomp_export_bpf(ctx, 6);
 
-    /* Install the seccomp fileter into the kernel */
+    /* Install the seccomp filter into the kernel */
 
     rc = seccomp_load(ctx);
     if (rc < 0)

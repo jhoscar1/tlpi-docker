@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -63,12 +63,16 @@ main(int argc, char *argv[])
         switch (opt) {
 
         case 'n':       /* Join a namespace */
-            fd = open(optarg, O_RDONLY); /* Get descriptor for namespace */
+
+            fd = open(optarg, O_RDONLY | O_CLOEXEC);  /* Get FD for namespace */
             if (fd == -1)
                 errExit("open");
 
             if (setns(fd, 0) == -1)      /* Join that namespace */
                 errExit("setns");
+
+            close(fd);
+
             break;
 
         case 'f':
@@ -95,7 +99,7 @@ main(int argc, char *argv[])
             errExit("fork");
 
         if (pid != 0) {                 /* Parent */
-            if (waitpid(-1, NULL, 0) == -1)     /* Wait for child */
+            if (waitpid(pid, NULL, 0) == -1)    /* Wait for child */
                 errExit("waitpid");
             exit(EXIT_SUCCESS);
         }

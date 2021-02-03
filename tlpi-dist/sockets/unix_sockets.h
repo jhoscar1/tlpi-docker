@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU Lesser General Public License as published   *
@@ -23,8 +23,6 @@
 int unixBuildAddress(const char *path, struct sockaddr_un *addr);
 
 int unixConnect(const char *path, int type);
-
-int unixListen(const char *path, int backlog);
 
 int unixBind(const char *path, int type);
 

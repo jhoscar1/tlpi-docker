@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -13,7 +13,7 @@
 /* madvise_dontneed.c
 
    Demonstrate the "destructive" semantics of the madvise() MADV_DONTNEED
-   operation. On Linux, when MAD_DONTNEED is applied to a MAP_PRIVATE mapping,
+   operation. On Linux, when MADV_DONTNEED is applied to a MAP_PRIVATE mapping,
    the pages (and thus any modifications to the pages) are discarded; when
    next accessed, the pages are reinitialized from the underlying file.
 

@@ -11,7 +11,7 @@ all : ${EXE}
 allgen : ${GEN_EXE}
 
 dynload : dynload.o
-	${CC} -o $@ dynload.o ${CFLAGS} ${LDLIBS} ${LINUX_LIBDL}
+	${CC} -o $@ dynload.o ${CFLAGS} ${IMPL_LDLIBS} ${LINUX_LIBDL}
 
 clean :
 	${RM} ${EXE} *.o *.so.*

@@ -24,12 +24,14 @@ DIRS = 	lib \
 	syslim \
 	threads time timers tty \
 	users_groups \
+	vdso \
 	vmem \
 	xattr
 
-# The "namespaces" directory is deliberately excluded from the above
-# list because much of the code requires a fairly recent kernel and
-# userspace to build. Nevertheless, there is a Makefile in that directory.
+# The "namespaces" and "seccomp" directories are deliberately excluded from
+# the above list because much of the code in those directories requires a
+# relatively recent kernel and userspace to build. Nevertheless, each of
+# those directories contains a Makefile.
 
 BUILD_DIRS = ${DIRS}
 
@@ -37,8 +39,9 @@ BUILD_DIRS = ${DIRS}
 # Dummy targets for building and clobbering everything in all subdirectories
 
 all: 	
-	echo ${BUILD_DIRS}
-	@ for dir in ${BUILD_DIRS}; do (cd $${dir}; ${MAKE}) ; done
+	@ echo ${BUILD_DIRS}
+	@ for dir in ${BUILD_DIRS}; do (cd $${dir}; ${MAKE}) ; \
+		if test $$? -ne 0; then break; fi; done
 
 allgen: 
 	@ for dir in ${BUILD_DIRS}; do (cd $${dir}; ${MAKE} allgen) ; done

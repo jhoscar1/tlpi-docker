@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -27,6 +27,7 @@
 #include <string.h>
 #include <signal.h>
 #include <stdio.h>
+#include <sys/mman.h>
 
 /* A simple error-handling function: print an error message based
    on the value in 'errno' and terminate the calling process */
@@ -59,16 +60,16 @@ int
 main(int argc, char *argv[])
 {
     pid_t child_pid;
-    char *child_stack;
+    char *stack;
 
-    child_stack = malloc(STACK_SIZE);
-    if (child_stack == NULL)
-        errExit("malloc");
+    stack = mmap(NULL, STACK_SIZE, PROT_READ | PROT_WRITE,
+                 MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
+    if (stack == MAP_FAILED)
+        errExit("mmap");
 
     child_pid = clone(childFunc,
-                    child_stack + STACK_SIZE,   /* Points to start of
-                                                   downwardly growing stack */
-                    CLONE_NEWPID | SIGCHLD, argv[1]);
+                      stack + STACK_SIZE,   /* Assume stack grows downward */
+                      CLONE_NEWPID | SIGCHLD, argv[1]);
 
     if (child_pid == -1)
         errExit("clone");

@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -85,8 +85,6 @@ main(int argc, char *argv[])
 
     if (argc > 1 && strcmp(argv[1], "--help") == 0)
         usageErr("%s [secs [usecs [int-secs [int-usecs]]]]\n", argv[0]);
-
-    sigCnt = 0;
 
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0;

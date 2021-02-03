@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -19,46 +19,49 @@
 
    Usage is as shown in the usageErr() call below.
 
-   Credentials can exchanged over stream or datagram sockets. This program
+   Credentials can be exchanged over stream or datagram sockets. This program
    uses stream sockets by default; the "-d" command-line option specifies
    that datagram sockets should be used instead.
 
    This program is Linux-specific.
+
+   See also scm_multi_send.c.
 */
 #include "scm_cred.h"
 
 int
 main(int argc, char *argv[])
 {
+    int sfd, opt;
     struct msghdr msgh;
     struct iovec iov;
-    int data, sfd, opt;
-    ssize_t ns;
-    Boolean useDatagramSocket, noExplicit;
 
     /* Allocate a char array of suitable size to hold the ancillary data.
        However, since this buffer is in reality a 'struct cmsghdr', use a
-       union to ensure that it is aligned as required for that structure. */
+       union to ensure that it is aligned as required for that structure.
+       Alternatively, we could allocate the buffer using malloc(), which
+       returns a buffer that satisfies the strictest alignment
+       requirements of any type */
+
     union {
-        struct cmsghdr cmh;
-        char   control[CMSG_SPACE(sizeof(struct ucred))];
+        char   buf[CMSG_SPACE(sizeof(struct ucred))];
                         /* Space large enough to hold a ucred structure */
-    } control_un;
-    struct cmsghdr *cmhp;
+        struct cmsghdr align;
+    } controlMsg;
 
-    /* Parse command-line arguments */
+    /* Parse command-line options */
 
-    useDatagramSocket = FALSE;
-    noExplicit = FALSE;
+    bool useDatagramSocket = false;
+    bool noExplicitCreds = false;
 
     while ((opt = getopt(argc, argv, "dn")) != -1) {
         switch (opt) {
         case 'd':
-            useDatagramSocket = TRUE;
+            useDatagramSocket = true;
             break;
 
         case 'n':
-            noExplicit = TRUE;
+            noExplicitCreds = true;
             break;
 
         default:
@@ -69,81 +72,96 @@ main(int argc, char *argv[])
         }
     }
 
-    /* On Linux, we must transmit at least 1 byte of real data in
-       order to send ancillary data */
-
-    msgh.msg_iov = &iov;
-    msgh.msg_iovlen = 1;
-    iov.iov_base = &data;
-    iov.iov_len = sizeof(int);
-
-    /* Data is optionally taken from command line */
-
-    data = (argc > optind) ? atoi(argv[optind]) : 12345;
-
-    /* Don't need to specify destination address, because we use
-       connect() below */
+    /* The 'msg_name' field can be used to specify the address of the
+       destination socket when sending a datagram. However, we do not
+       need to use this field because we use connect() below, which sets
+       a default outgoing address for datagrams. */
 
     msgh.msg_name = NULL;
     msgh.msg_namelen = 0;
 
-    if (noExplicit) {
+    /* On Linux, we must transmit at least 1 byte of real data in
+       order to send ancillary data */
 
-        /* Don't construct an explicit credentials structure. (It
-           is not necessary to do so, if we just want the receiver to
-           receive our real credentials.) */
+    int data = (argc > optind) ? atoi(argv[optind]) : 12345;
+                    /* Data is optionally taken from command line */
+    fprintf(stderr, "Sending data = %d\n", data);
+
+    msgh.msg_iov = &iov;
+    msgh.msg_iovlen = 1;
+    iov.iov_base = &data;
+    iov.iov_len = sizeof(data);
+
+    if (noExplicitCreds) {
+
+        /* Don't construct an explicit credentials structure. (It is not
+           necessary to do so, if we just want the receiver to receive
+           our real credentials.) */
 
         printf("Not explicitly sending a credentials structure\n");
         msgh.msg_control = NULL;
         msgh.msg_controllen = 0;
 
     } else {
-        struct ucred *ucp;
 
-        /* Set 'msgh' fields to describe 'control_un' */
+        /* Set 'msgh' fields to describe the ancillary data buffer */
 
-        msgh.msg_control = control_un.control;
-        msgh.msg_controllen = sizeof(control_un.control);
+        msgh.msg_control = controlMsg.buf;
+        msgh.msg_controllen = sizeof(controlMsg.buf);
 
-        /* Set message header to describe ancillary data that we want to send */
+        /* The control message buffer must be zero-initialized in order for the
+           CMSG_NXTHDR() macro to work correctly. Although we don't need to use
+           CMSG_NXTHDR() in this example (because there is only one block of
+           ancillary data), we show this step to demonstrate best practice */
 
-        cmhp = CMSG_FIRSTHDR(&msgh);
-        cmhp->cmsg_len = CMSG_LEN(sizeof(struct ucred));
-        cmhp->cmsg_level = SOL_SOCKET;
-        cmhp->cmsg_type = SCM_CREDENTIALS;
-        ucp = (struct ucred *) CMSG_DATA(cmhp);
+        memset(controlMsg.buf, 0, sizeof(controlMsg.buf));
 
-        /*
-        We could rewrite the preceding as:
+        /* Set message header to describe the ancillary data that
+           we want to send */
 
-        control_un.cmh.cmsg_len = CMSG_LEN(sizeof(struct ucred));
-        control_un.cmh.cmsg_level = SOL_SOCKET;
-        control_un.cmh.cmsg_type = SCM_CREDENTIALS;
-        ucp = (struct ucred *) CMSG_DATA(CMSG_FIRSTHDR(&msgh));
-        */
+        struct cmsghdr *cmsgp = CMSG_FIRSTHDR(&msgh);
+        cmsgp->cmsg_len = CMSG_LEN(sizeof(struct ucred));
+        cmsgp->cmsg_level = SOL_SOCKET;
+        cmsgp->cmsg_type = SCM_CREDENTIALS;
 
         /* Use sender's own PID, real UID, and real GID, unless
            alternate values were supplied on the command line */
 
-        ucp->pid = (argc > optind + 1 && strcmp(argv[optind + 1], "-") != 0) ?
-                        atoi(argv[optind + 1]) : getpid();
-        ucp->uid = (argc > optind + 2 && strcmp(argv[optind + 2], "-") != 0) ?
-                        atoi(argv[optind + 2]) : getuid();
-        ucp->gid = (argc > optind + 3 && strcmp(argv[optind + 3], "-") != 0) ?
-                        atoi(argv[optind + 3]) : getgid();
+        struct ucred creds;
+
+        creds.pid = getpid();
+        if (argc > optind + 1 && strcmp(argv[optind + 1], "-") != 0)
+            creds.pid = atoi(argv[optind + 1]);
+
+        creds.uid = getuid();
+        if (argc > optind + 2 && strcmp(argv[optind + 2], "-") != 0)
+            creds.uid = atoi(argv[optind + 2]);
+
+        creds.gid = getgid();
+        if (argc > optind + 3 && strcmp(argv[optind + 3], "-") != 0)
+            creds.gid = atoi(argv[optind + 3]);
 
         printf("Send credentials pid=%ld, uid=%ld, gid=%ld\n",
-                (long) ucp->pid, (long) ucp->uid, (long) ucp->gid);
+                (long) creds.pid, (long) creds.uid, (long) creds.gid);
+
+        /* Copy 'ucred' structure into data field in the 'cmsghdr' */
+
+        memcpy(CMSG_DATA(cmsgp), &creds, sizeof(struct ucred));
     }
+
+    /* Connect to the peer socket */
 
     sfd = unixConnect(SOCK_PATH, useDatagramSocket ? SOCK_DGRAM : SOCK_STREAM);
     if (sfd == -1)
         errExit("unixConnect");
 
-    ns = sendmsg(sfd, &msgh, 0);
+    /* Send real plus ancillary data */
+
+    ssize_t ns = sendmsg(sfd, &msgh, 0);
     if (ns == -1)
         errExit("sendmsg");
-    printf("sendmsg() returned %ld\n", (long) ns);
+
+    printf("sendmsg() returned %zd\n", ns);
 
     exit(EXIT_SUCCESS);
 }

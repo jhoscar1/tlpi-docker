@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -63,6 +63,7 @@ main(int argc, char *argv[])
         errExit("mmap");
 
     memcpy(dst, src, sb.st_size);       /* Copy bytes between mappings */
+
     if (msync(dst, sb.st_size, MS_SYNC) == -1)
         errExit("msync");
 

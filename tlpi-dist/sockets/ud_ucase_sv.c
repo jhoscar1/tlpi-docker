@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -61,6 +61,7 @@ main(int argc, char *argv[])
 
         printf("Server received %ld bytes from %s\n", (long) numBytes,
                 claddr.sun_path);
+        /*FIXME: above: should use %zd here, and remove (long) cast */
 
         for (j = 0; j < numBytes; j++)
             buf[j] = toupper((unsigned char) buf[j]);

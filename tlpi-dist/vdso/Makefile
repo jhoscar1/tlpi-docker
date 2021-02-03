@@ -14,10 +14,10 @@ clean :
 	${RM} ${EXE} *.o
 
 vdso_gettimeofday : gettimeofday.c
-	${CC} -o $@ gettimeofday.c ${CFLAGS} ${LDLIBS}
+	${CC} -o $@ gettimeofday.c ${CFLAGS} ${IMPL_LDLIBS}
 
 syscall_gettimeofday : gettimeofday.c
-	${CC} -DUSE_SYSCALL -o $@ gettimeofday.c ${CFLAGS} ${LDLIBS}
+	${CC} -DUSE_SYSCALL -o $@ gettimeofday.c ${CFLAGS} ${IMPL_LDLIBS}
 
 showall :
 	@ echo ${EXE}

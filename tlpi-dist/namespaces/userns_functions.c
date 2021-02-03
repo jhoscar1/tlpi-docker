@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU Lesser General Public License as published   *
@@ -67,14 +67,14 @@ display_creds_and_caps(char *str)
 int
 update_map(char *mapping, char *map_file)
 {
-    int fd, j;
+    int fd;
     size_t map_len;     /* Length of 'mapping' */
     int status;
 
     /* Replace commas in mapping string with newlines */
 
     map_len = strlen(mapping);
-    for (j = 0; j < map_len; j++)
+    for (int j = 0; j < map_len; j++)
         if (mapping[j] == ',')
             mapping[j] = '\n';
 

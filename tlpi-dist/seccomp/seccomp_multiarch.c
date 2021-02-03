@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -33,8 +33,8 @@
    installed for the life of the process. This filter causes calls to
    mq_notify(2) to fail, but checks for each of the syscall numbers for
    x86-64, i386, and x32, and fails each different architecture-specific
-   with a differient error. An environment variable is employed to ensure
-   tht only the first binary installs a seccomp() filter.
+   system call with a different error. An environment variable is employed
+   to ensure that only the first binary installs a seccomp() filter.
 
    Each binary prints out some status information, calls mq_notify() (and
    prints the resulting error number returned in 'errno'), and execs the
@@ -54,6 +54,15 @@
    If you run this program on a non-Intel multi-arch platform, the
    definitions of architecture and system call numbers below will
    need to be adjusted.
+
+   NOTE: While it is possible to write seccomp filters that deal with
+   multiple architectures, this is not recommended best practice. Rather,
+   filters should be written specific to an architecture, and terminate
+   the process if the architecture is other than what is expected. Where
+   needed, it is best to have one filter per architecture. Trying to create
+   a filter that deals with multiple architectures has a number of problems:
+   such filters will be larger (and one may easily hit the 4096-instruction
+   limit) and slower (because of the added architecture checks).
 */
 #define _GNU_SOURCE
 #include <mqueue.h>
@@ -71,6 +80,15 @@
 
 #define errExit(msg)    do { perror(msg); exit(EXIT_FAILURE); \
                         } while (0)
+
+/* The following is a hack to allow for systems (pre-Linux 4.14) that don't
+   provide SECCOMP_RET_KILL_PROCESS, which kills (all threads in) a process.
+   On those systems, define SECCOMP_RET_KILL_PROCESS as SECCOMP_RET_KILL
+   (which simply kills the calling thread). */
+
+#ifndef SECCOMP_RET_KILL_PROCESS
+#define SECCOMP_RET_KILL_PROCESS SECCOMP_RET_KILL
+#endif
 
 static int
 seccomp(unsigned int operation, unsigned int flags, void *args)
@@ -137,43 +155,51 @@ seccomp(unsigned int operation, unsigned int flags, void *args)
 static void
 install_filter(void)
 {
+    /* The following BPF filter causes mq_notify() to fail with a different
+       error on each architecture. (mq_notify() is an example of a system
+       call that has a different number on each of x86-64, i386, and x32.)
+       To make it easy to determine which system call number triggered the
+       seccomp failure, return the system call number as the error number
+       that will appear in 'errno'. */
+
     struct sock_filter filter[] = {
 
-        /* Load architecture into accumulator */
+        /* [0] Load the architecture value. */
 
         BPF_STMT(BPF_LD | BPF_W | BPF_ABS,
                 (offsetof(struct seccomp_data, arch))),
 
-        /* Kill the process if the architecture is not one of those
-           that we expect */
+        /* [1] Are we on x86-64 architecture? If it is not, jump forward
+               to test whether this is the i386 architecture. */
 
-        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, AUDIT_ARCH_X86_64, 2, 0),
-        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, AUDIT_ARCH_I386, 1, 0),
-        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL),
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, AUDIT_ARCH_X86_64, 0, 5),
 
-        /* Load system call number */
+        /* [2] Load the system call number. */
 
         BPF_STMT(BPF_LD | BPF_W | BPF_ABS,
                  (offsetof(struct seccomp_data, nr))),
 
-        /* Cause mq_notify() to fail with a different error on each
-           architecture. (mq_notify() is an example of a system call that
-           has a different number on each of x86-64, i386, and x32.)
-           To make it easy to determine which system call number triggered
-           the seccomp failure, return the system call number as the error
-           number that will appear in 'errno'. */
+        /* [3] Is this the x86-64 mq_notify() syscall? */
 
         BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, NR_mq_notify_x86_64, 0, 1),
+
+        /* [4] It is; make the call fail with an error equal to the
+               syscall number. */
+
         BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ERRNO | NR_mq_notify_x86_64),
 
-        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, NR_mq_notify_i386, 0, 1),
-        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ERRNO | NR_mq_notify_i386),
+        /* [5] Is this the x32 mq_notify() syscall? If it is not, jump
+               forward to allow the syscall. */
 
         BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K,
-                 (NR_mq_notify_x32 + X32_SYSCALL_BIT), 0, 1),
+                 (NR_mq_notify_x32 + X32_SYSCALL_BIT), 0, 5),
+
+        /* [6] It is; make the call fail with an error equal to the
+               syscall number. */
+
         BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ERRNO | NR_mq_notify_x32),
-                /* Return NR_mq_notify_x32, rather than
-                   (NR_mq_notify_x32 + X32_SYSCALL_BIT) because glibc only
+                /* Return NR_mq_notify_x32 as the error number, rather than
+                   (NR_mq_notify_x32 + X32_SYSCALL_BIT), because glibc only
                    considers negative syscall return values in the range
                    [-4096 < retval < 0] to be error values that should be
                    (negated and) copied to 'errno'.  Note also that even
@@ -182,14 +208,38 @@ install_filter(void)
                    different number on x86-64 and x32 (this is *not* the
                    case for all syscalls under these two ABIs). */
 
-        /* All other system calls are allowed */
+        /* [7] Is this the i386 architecture? If it is not, jump forward
+               to kill the process. */
+
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, AUDIT_ARCH_I386, 0, 4),
+
+        /* [8] Load the system call number. */
+
+        BPF_STMT(BPF_LD | BPF_W | BPF_ABS,
+                 (offsetof(struct seccomp_data, nr))),
+
+        /* [9] Is this the i386 mq_notify() syscall? If it is not, jump
+               forward to allow the syscall. */
+
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, NR_mq_notify_i386, 0, 1),
+
+        /* [10] It is; make the call fail with an error equal to the
+                syscall number. */
+
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ERRNO | NR_mq_notify_i386),
+
+        /* [11] Allow the system call. */
 
         BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ALLOW),
 
+        /* [12] Kill the process if the architecture is not one of those
+                that we expect. */
+
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL_PROCESS),
     };
 
     struct sock_fprog prog = {
-        .len = (unsigned short) (sizeof(filter) / sizeof(filter[0])),
+        .len = sizeof(filter) / sizeof(filter[0]),
         .filter = filter,
     };
 

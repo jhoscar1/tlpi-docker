@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -40,6 +40,7 @@ main(int argc, char *argv[])
     if (ftruncate(fd, len) == -1)           /* Resize object to hold string */
         errExit("ftruncate");
     printf("Resized to %ld bytes\n", (long) len);
+    /*FIXME: above: should use %zu here, and remove (long) cast */
 
     addr = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (addr == MAP_FAILED)
@@ -49,6 +50,7 @@ main(int argc, char *argv[])
         errExit("close");
 
     printf("copying %ld bytes\n", (long) len);
+    /*FIXME: above: should use %zu here, and remove (long) cast */
     memcpy(addr, argv[2], len);             /* Copy string to shared memory */
     exit(EXIT_SUCCESS);
 }

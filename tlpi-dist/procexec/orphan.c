@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -12,24 +12,31 @@
 
 /* orphan.c
 
-   Demonstrate how a child becomes orphaned (and adopted by init(8),
-   whose PID is 1) when its parent exits.
+   Demonstrate how a child becomes orphaned (and adopted by init(1))
+   when its parent exits.
+
+   Change history:
+   2019-02-15   Changes to allow for the fact that on systems with a modern
+                init(1) (e.g., systemd), an orphaned child may be adopted
+                by a "child subreaper" process whose PID is not 1.
 */
 #include "tlpi_hdr.h"
 
 int
 main(int argc, char *argv[])
 {
-    pid_t ppid;
+    pid_t ppid, ppidOrig;
 
     setbuf(stdout, NULL);       /* Disable buffering of stdout */
+
+    ppidOrig = getpid();
 
     switch (fork()) {
     case -1:
         errExit("fork");
 
     case 0:             /* Child */
-        while ((ppid = getppid()) != 1) {   /* Loop until orphaned */
+        while ((ppid = getppid()) == ppidOrig) {   /* Loop until orphaned */
             printf("Child running (parent PID=%ld)\n", (long) ppid);
             sleep(1);
         }

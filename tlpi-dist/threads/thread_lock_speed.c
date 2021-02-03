@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -45,9 +45,9 @@ static int numInnerLoops;
 static void *
 threadFunc(void *arg)
 {
-    int j, k, s;
+    int s;
 
-    for (j = 0; j < numOuterLoops; j++) {
+    for (int j = 0; j < numOuterLoops; j++) {
         if (useMutex) {
             s = pthread_mutex_lock(&mtx);
             if (s != 0)
@@ -58,7 +58,7 @@ threadFunc(void *arg)
                 errExitEN(s, "pthread_spin_lock");
         }
 
-        for (k = 0; k < numInnerLoops; k++)
+        for (int k = 0; k < numInnerLoops; k++)
             glob++;
 
         if (useMutex) {
@@ -91,7 +91,7 @@ usageError(char *pname)
 int
 main(int argc, char *argv[])
 {
-    int opt, s, j;
+    int opt, s;
     int numThreads;
     pthread_t *thread;
     int verbose;
@@ -142,13 +142,13 @@ main(int argc, char *argv[])
             errExitEN(s, "pthread_spin_init");
     }
 
-    for (j = 0; j < numThreads; j++) {
+    for (int j = 0; j < numThreads; j++) {
         s = pthread_create(&thread[j], NULL, threadFunc, NULL);
         if (s != 0)
             errExitEN(s, "pthread_create");
     }
 
-    for (j = 0; j < numThreads; j++) {
+    for (int j = 0; j < numThreads; j++) {
         s = pthread_join(thread[j], NULL);
         if (s != 0)
             errExitEN(s, "pthread_join");

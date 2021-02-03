@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -44,7 +44,7 @@ main(int argc, char *argv[])
     size_t len;
     off_t offset;
     int fd, ap, j;
-    char *buf;
+    unsigned char *buf;
     ssize_t numRead, numWritten;
 
     if (argc < 3 || strcmp(argv[1], "--help") == 0)
@@ -77,10 +77,9 @@ main(int argc, char *argv[])
                 printf("%s: ", argv[ap]);
                 for (j = 0; j < numRead; j++) {
                     if (argv[ap][0] == 'r')
-                        printf("%c", isprint((unsigned char) buf[j]) ?
-                                                buf[j] : '?');
+                        printf("%c", isprint(buf[j]) ?  buf[j] : '?');
                     else
-                        printf("%02x ", (unsigned int) buf[j]);
+                        printf("%02x ", buf[j]);
                 }
                 printf("\n");
             }
@@ -92,6 +91,7 @@ main(int argc, char *argv[])
             numWritten = write(fd, &argv[ap][1], strlen(&argv[ap][1]));
             if (numWritten == -1)
                 errExit("write");
+            /*FIXME: should use %zd here, and remove (long) cast */
             printf("%s: wrote %ld bytes\n", argv[ap], (long) numWritten);
             break;
 

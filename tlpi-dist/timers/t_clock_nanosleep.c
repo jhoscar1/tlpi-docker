@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -60,7 +60,7 @@ main(int argc, char *argv[])
         if (clock_gettime(CLOCK_REALTIME, &request) == -1)
             errExit("clock_gettime");
         printf("Initial CLOCK_REALTIME value: %ld.%09ld\n",
-                (long) request.tv_sec, (long) request.tv_nsec);
+                (long) request.tv_sec, request.tv_nsec);
 
         request.tv_sec  += getLong(argv[1], 0, "secs");
         request.tv_nsec += getLong(argv[2], 0, "nanosecs");

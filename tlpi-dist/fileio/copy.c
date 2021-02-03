@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -50,7 +50,7 @@ main(int argc, char *argv[])
 
     while ((numRead = read(inputFd, buf, BUF_SIZE)) > 0)
         if (write(outputFd, buf, numRead) != numRead)
-            fatal("couldn't write whole buffer");
+            fatal("write() returned error or partial write occurred");
     if (numRead == -1)
         errExit("read");
 

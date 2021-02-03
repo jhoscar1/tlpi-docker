@@ -222,7 +222,7 @@ for TLPI, available at http://man7.org/tlpi/errata/.
                 in three of the example programs.  (Those warnings do not
                 correspond to real problems in the code.) The
                 "-Wunused-but-set-variable" flag was added (and turned on
-                by default) in GCC 4.6, which was released on 2011-03-35
+                by default) in gcc 4.6, which was released on 2011-03-35
                 (i.e., after TLPI was written).
 
 2012-10-15
@@ -373,8 +373,7 @@ for TLPI, available at http://man7.org/tlpi/errata/.
 
 2013-10-25
         filelock/t_flock.c
-                Fix an error in the message printed by
-                <span class="func">usageErr()</span>.
+                Fix an error in the message printed by usageErr().
                 See the erratum for page 1121.
                 (Thanks to Liu Jiaming.)
 
@@ -821,11 +820,6 @@ for TLPI, available at http://man7.org/tlpi/errata/.
                 (Only in "dist" version of code.)
 
 2017-08-15
-        inotify/inotify_dtree.c
-                Eliminate "’snprintf’ output may be truncated before the last
-                format character" warning from "gcc -Wformat-truncation".
-
-2017-08-15
         inotify/rand_dtree.c
                 Eliminate compiler warning about redefinition of
                 _XOPEN_SOURCE.
@@ -915,6 +909,7 @@ for TLPI, available at http://man7.org/tlpi/errata/.
                 Check that the file being visited is stat()-able before
                 inspecting (sbuf->st_mode & S_IFMT).
                 See the erratum for page 361.
+
 2017-11-29
         namespaces/userns_child_exec.c
                 Add '-r' option as synonym for '-z'. This is for consistency
@@ -1002,3 +997,704 @@ for TLPI, available at http://man7.org/tlpi/errata/.
                 A short program to demonstrate the performance benefits of
                 implementing some traditional system calls as user-space
                 interfaces in the VDSO.
+
+2018-06-19
+        seccomp/seccomp_multiarch.c
+                Fix typos in comments.
+        files/t_chown.c
+                Fix typo in an error message. (See the erratum for page 294.)
+
+2018-06-24
+        cap/view_cap_xattr.c
+                Add a new program that can be used to obtain a "raw" view of
+                the 'security.capability' attribute attached to a file.
+                (This is useful for verifying the contents of that attribute
+                while experimenting with the namespaced file capabilities
+                feature added in Linux 4.14.)
+        namespaces/cred_launcher.c
+                Launch a program after first changing the process's
+                credentials as per command-line options.
+
+2018-06-27
+        namespaces/userns_child_exec.c
+                Add a '-s <uid>' command-line option to specify that the
+                program should change its UIDs before doing the exec().
+                This is useful for some experiments with user namespaces.
+                (In particular, it was added for doing experiments with the
+                namespaced file capabilities feature added in Linux 4.14.)
+
+                Add '-a' option to push all possible capabilities into
+                ambient set before executing command.
+
+                Add a '-b' option to set securebits flags before executing
+                command.
+
+2018-06-29
+        cap/cap_functions.c
+        cap/cap_functions.h
+                Add files with useful helper functions for working with
+                capabilities.
+        namespaces/userns_child_exec.c
+                Add missing header file.
+                Remove some unneeded header files.
+                Minor reworking of code command-line option processing.
+
+2018-07-01
+        namespaces/show_creds.c
+                A simple program that prints its credentials and capabilities.
+                (Useful for some experiments with user namespaces.)
+
+2018-07-11
+        seccomp/seccomp_arg64.c
+        seccomp/seccomp_control_open.c
+        seccomp/seccomp_deny_open.c
+        seccomp/seccomp_logging.c
+        seccomp/seccomp_multiarch.c
+        seccomp/seccomp_perf.c
+                Switch from SECCOMP_RET_KILL to SECCOMP_RET_KILL_PROCESS.
+                SECCOMP_RET_KILL_PROCESS has now been around for nearly a
+                year, so it seems reasonable to start using it.
+
+2018-07-12
+        Makefile.inc
+                Suppress the "-Wformat-truncation" warnings that recent
+                gcc(1) versions started generating. Really, the code that
+                generates the warnings should be fixed, but that would
+                require changes to the code printed in the book which,
+                for now, I prefer to avoid making.
+        cap/Makefile
+                Add 'view_cap_xattr' target.
+        namespaces/Makefile
+                Add 'cred_launcher' target.
+        sockets/scm_multi.h
+        sockets/scm_multi_recv.c
+        sockets/scm_multi_send.c
+        sockets/Makefile
+                New programs demonstrating how to send multiple pieces of
+                ancillary data over a UNIX domain socket.
+
+2018-07-16
+        sockets/scm_rights_recv.c
+                Remove some unneeded code.
+                Reorder some declarations and rename some variables/fields.
+                Tweak some comments.
+        sockets/scm_cred_recv.c
+                Remove some unneeded code.
+                Reorder some declarations and rename some variables/fields.
+                Tweak some comments.
+        sockets/scm_rights_send.c
+                Tweak some comments.
+                Reorder some declarations and rename some variables/fields.
+                Remove comments suggesting alternatives to the macros in
+                cmsg(3); those macros should really always be used.
+        sockets/scm_cred_send.c
+                Rename 'ucp' variable to 'ucredp' for consistency with
+                sockets/scm_cred_recv.c.
+                Rework code a little to improve layout/ease of reading.
+                Reorder some declarations and rename some variables/fields.
+                Tweak some comments.
+                Remove comments suggesting alternatives to the macros in
+                cmsg(3); those macros should really always be used.
+
+2018-07-16
+        sockets/unix_sockets.c
+        sockets/unix_sockets.h
+                Eliminate unixListen() function. It's simpler
+                just to have unixBind() plus listen().
+
+2018-07-16
+        sockets/unix_sockets.c
+                Fix a logic error in code determining which 'errno' value
+                is returned for a pathname that is too long.
+
+2018-07-16
+        sockets/scm_cred_recv.c
+        sockets/scm_multi_recv.c
+        sockets/scm_rights_recv.c
+        sockets/sock_stream_speed.c
+        sockets/us_xfr_v2_sv.c
+                Replace calls to unixListen() with unixBind() + listen()
+
+2018-07-17
+        sockets/scm_functions.c
+        sockets/scm_functions.h
+                New files defining functions for exchanging ancillary data
+                (a file descriptor) on UNIX domain sockets.
+
+2018-07-22
+        shlibs/demo_Bsymbolic/foo3.c
+                Add a missing declaration to prevent a compiler warning.
+        shlibs/demo_Bsymbolic/build.sh [removed]
+        shlibs/demo_Bsymbolic/Makefile
+                Remove build script in favor of a Makefile
+
+2018-07-23
+        cap/cap_functions.h
+        namespaces/userns_functions.h
+                Add #ifdef to prevent accidental double inclusion.
+        cap/cap_launcher.c
+                Add a new program that can be used to launch other programs
+                with specified capabilities.
+        cap/demo_file_caps.c
+                Add a new program that can be used for a simple
+                demonstration of file capabilities.
+        Makefile
+                Add 'vdso' directory to build list.
+        Makefile.inc
+                Tweak compiler options for clang(1).
+        shlibs/dynload.c
+                Expand comments on the use of #pragma and note that
+                the #pragma lines may need to be removed if building
+                with an old version gcc(1).
+
+2018-07-26
+        sockets/scm_multi_recv.c
+                Use more strictly correct code for calculating number of
+                received file descriptors.
+
+2018-07-31
+        namespaces/namespaces_of.go
+                Add a program that shows the namespace memberships of one or
+                more processes in the context of the user namespace hierarchy.
+
+2018-08-01
+        namespaces/Makefile
+        namespaces/ns_capable.c
+                Add a program that can be used to determine if a specified
+                PID has capabilities in a specified namespace.
+
+2018-08-10
+        namespaces/pid_namespaces.go
+                Add a new program to display the PID namespace hierarchy.
+
+2018-08-21
+        Makefile
+                Update comments to note that programs in 'seccomp'
+                directory are not built by default.
+        BUILDING
+                Fix a typo.
+                Note that programs in a few subdirectories are not build
+                by default.
+                Add a note on building the 'Go' programs in the source tarball.
+2018-09-04
+        cap/Makefile
+                Update a stale comment.
+                Remove 'view_cap_xattr' from list of built targets, since
+                it leads to build errors on systems that do not have
+                Linux 4.14 or later.
+
+2018-09-12
+        namespaces/userns_child_exec.c
+                Small tweak to "usage" message.
+        seccomp/seccomp_trap_sigsys.c
+                A simple example of a seccomp filter that uses SECCOMP_RET_TRAP
+                to cause a signal to be generated when a getppid() system call
+                is made.
+
+2018-09-17
+        altio/multithread_epoll_wait.c
+                Add an example that shows if multiple threads are using
+                epoll_wait() to wait on the same epoll file descriptor that has
+                a file descriptor in its interest list that was added with the
+                EPOLLET flag, then, when that file descriptor becomes ready,
+                only one of the waiting threads is woken up.
+        altio/epoll_flags_fork.c
+                Add an example program that allows experimentation with the
+                epoll EPOLLET and EPOLLEXCLUSIVE flags in a multiprocess
+                program.
+
+2018-10-03
+        namespaces/namespaces_of.go
+                Add a "--namespaces=<list>" option to select which namespace
+                types to display when displaying user namespace hierarchy.
+                Remove the "--userns-only" option, since it is synonymous with
+                "--namespaces=user".
+                For user namespaces, display the UID of the namespace creator.
+                Correctly diagnose EACCES error when running as non-root.
+                Switch function names to initial lower case, to make them
+                private.
+                Various other minor code tweaks.
+                Rename some functions.
+                Tweak various comments.
+
+2018-10-18
+        cgroups/view_v2_cgroups.go
+                Add a new program that can be used to display the state
+                (member processes and threads, enabled controllers,
+                cgroup type, and owner UID) of a cgroup subtree inside
+                the cgroups v2 "unified" hierarchy.
+        cgroups/remove_cgroup_hier.sh
+                Add a handy utility script that can be used to move all process
+                in a cgroups v2 hierarchy to the root cgroup and remove all
+                descendant cgroups. This can be useful if we want to properly
+                unmount a cgroups v1 hierarchy so that the corresponding
+                controller becomes available in cgroups v2 hierarchy.
+
+2018-10-22
+        cgroups/alloc_mem.c
+                Add a new program that can be used to for experiments with
+                the 'memory' cgroup controller.
+        cgroups/fork_bomb.c
+                Add a new program that can be used to for experiments with
+                the 'pids' cgroup controller.
+        cgroups/Makefile
+                Makefile for alloc_mem.c and fork_bomb.c
+        timers/cpu_burner.c
+        timers/cpu_multi_burner.c
+        timers/cpu_multithread_burner.c
+                Add various programs that burn CPU time. Among other purposes,
+                these programs are useful for experiments with the 'cpu'
+                cgroups controller.
+        cgroups/Makefile
+                Add 'cpu_burner', 'cpu_multi_burner', and
+                'cpu_multithread_burner' targets.
+        cgroups/view_v2_cgroups.go
+                Switch from use of SCHED_GETATTR to SCHED_GETSCHEDULER,
+                because older Go runtime does not know about SCHED_GETATTR.
+
+2018-10-23
+        cgroups/view_v2_cgroups.go
+                Add a more detailed usage message.
+        cgroups/move_RT_tasks_to_cgroup_root.sh
+                Add a new script that moves all processes that have a realtime
+                scheduling policy into the root cgroup of the cgroup v2
+                hierarchy. This is useful if we want to enable the 'cpu'
+                controller in the cgroups v2 hierarchy.
+
+2018-11-16
+        seccomp/seccomp_arg64.c
+        seccomp/seccomp_control_open.c
+        seccomp/seccomp_deny_open.c
+        seccomp/seccomp_logging.c
+        seccomp/seccomp_perf.c
+                Add check for x32 ABI.
+        seccomp/seccomp_logging.c
+                Add some comments.
+
+2018-11-18
+        timers/cpu_multithread_burner.c
+                Add an inner loop to burn CPU in user mode.
+
+2018-11-22
+        lib/error_functions.c
+                Add a pragma to suppress a "gcc -Wformat-truncation" warning.
+                (Only in "dist" version of code.)
+        inotify/inotify_dtree.c
+        inotify/rand_dtree.c
+                Some minor fixes to avoid "gcc -Wformat-truncation" warnings.
+
+2018-12-03
+        Makefile.inc
+                Remove unneeded '-lm' from IMPL_LDLIBS macro definition
+
+2018-12-11
+        namespaces/userns_child_exec.c
+                Fix an off-by-one error in check of value given to '-s' option.
+
+2019-02-01
+        seccomp/seccomp_trap_sigsys.c
+                Add x32 architecture check.
+
+2019-02-05
+        cap/cap_text.c
+                Fix some typos in comments.
+                (Thanks to Aleksandr Zasypkin.)
+
+2019-02-13
+        namespaces/userns_child_exec.c
+                Add '-h' option to push all possible capabilities into
+                inheritable set before executing command.
+
+2019-02-14
+        namespaces/namespaces_of.go
+                When displaying the user namespace hierarchy for all processes
+                on the system, include the UID and GID map of each namespace
+                in the output.
+
+2019-02-15
+        procexec/orphan.c
+        namespaces/orphan.c
+                Changes to allow for the fact that on systems with a modern
+                init(1) (e.g., systemd), an orphaned child may be adopted
+                by a "child subreaper" process whose PID is not 1.
+        timers/real_timer.c
+                Remove a duplicated variable initialization; see the
+                erratum for page 882. (Thanks to Cyrus Ramavarapu.)
+
+2019-02-17
+        namespaces/userns_child_exec.c
+                Make some command-line options options repeatable.
+                Add '-d' option to display credentials and capabilities.
+                Add '-S' option to set real/effective/saved-set UIDs.
+                Add '-x' option to set process capabilities.
+                Add '-w' option to sleep for specified number of seconds.
+                Add '-X' option to set/clear individual capability in any set.
+                Place command-line option values in a structure and parse
+                them in a dedicated function.
+                Some general code restructuring for better modularity.
+
+2019-02-18
+        lib/Makefile
+                Use some GNU make features to allow faster building.
+        lib/Makefile.std
+                Add a portable version of the Makefile, for systems
+                where GNU make is not installed.
+
+2019-02-22
+        namespaces/ns_capable.c
+                Rename 'search_ancestors()' to 'is_ancestor_userns()'.
+                Rename some variables for better readability and add some more
+                comments; some tweaks to comments and program output.
+
+2019-03-01
+        seccomp/seccomp_user_notification.c
+                A new program to demonstrate the seccomp "notify to user space"
+                feature added in Linux 5.0.
+
+2019-03-10
+        sockets/scm_functions.c
+                Add comments describing function return values.
+
+2019-03-14
+        sockets/scm_rights_send.c
+                Once the file descriptor has been sent, close it, to emphasize
+                the fact that it is no longer necessary to keep it open.
+
+2019-02-20
+        seccomp/dump_seccomp_filter.c
+                A new program to dump a process's seccomp filter(s).
+
+2019-02-21
+        seccomp/seccomp_launch.c
+                A new program to execute a binary after first loading a BPF
+                filter from a file.
+
+2019-03-25
+        acl/acl_update.c
+        cap/cap_text.c
+                Fix a minor error in a comment.
+
+2019-04-06
+        acl/acl_update.c
+                Remove crufty code accidentally added on 2019-03-25.
+
+2019-04-06
+        altio/multithread_epoll_wait.c
+        cap/cap_launcher.c
+        cgroups/alloc_mem.c
+        cgroups/fork_bomb.c
+        inotify/inotify_dtree.c
+        namespaces/simple_init.c
+        namespaces/userns_child_exec.c
+        namespaces/userns_functions.c
+        pmsg/mq_notify_siginfo.c
+        pmsg/mq_notify_via_signal.c
+        procpri/t_sched_setaffinity.c
+        seccomp/seccomp_perf.c
+        seccomp/seccomp_user_notification.c
+        sockets/scm_multi_recv.c
+        sockets/scm_multi_send.c
+        threads/pthread_barrier_demo.c
+        threads/thread_incr_rwlock.c
+        threads/thread_incr_spinlock.c
+        threads/thread_lock_speed.c
+        timers/cpu_multi_burner.c
+        vdso/gettimeofday.c
+                Use C99 style for declaring loop counters within the loop.
+
+2019-04-06
+        lib/tlpi_hdr.h
+                Include <stdbool.h> ("dist" version only).
+
+2019-04-06
+        sockets/scm_cred_recv.c
+        sockets/scm_cred_send.c
+        sockets/scm_multi_recv.c
+        sockets/scm_multi_send.c
+        sockets/scm_rights_recv.c
+        sockets/scm_rights_send.c
+                Use 'bool' type instead of 'Boolean'.
+
+2019-05-15
+        seccomp/seccomp_control_open.c
+                Remove use of SECCOMP_RET_DATA mask in SECCOMP_RET_ERRNO return.
+
+2019-05-16
+        seccomp/seccomp_multiarch.c
+                Fixed a bug in syscall number checking.
+                Thanks to Kevin Stravers.
+
+2019-05-23
+        Makefile.inc
+        altio/Makefile
+        filebuff/Makefile
+        seccomp/Makefile
+        shlibs/Makefile
+        signals/Makefile
+        users_groups/Makefile
+        vdso/Makefile
+                Fixed a bug that caused link commands to include libtlpi.a
+                twice.
+
+2019-06-26
+        namespaces/ns_exec.c
+        namespaces/ns_run.c
+                Open namespace symlink with O_CLOEXEC so that the file
+                descriptor is automatically closed when execing a program.
+
+2019-06-27
+        namespaces/Makefile
+                Simplify the makefile somewhat.
+
+2019-07-25
+        namespaces/userns_child_exec.c
+                Ensure that the process's dumpable flag is set to 1,
+                so as remove the need to install the binary with the
+                CAP_DAC_OVERRIDE capability.
+
+2019-07-26
+        seccomp/seccomp_bench.c
+                 Add a program to do some simple seccomp benchmarking.
+
+2019-09-06
+        BUILDING
+                 Explicitly note which shared libraries must be installed
+                 in order to build the code.
+
+2019-09-25
+        namespaces/ns_run.c
+                 Replace waitpid(-1,...) with call that explicitly specifies
+                 child's PID.
+
+2019-09-30
+        procexec/pdeath_signal.c
+                A test program for exploring (surprising corner cases in)
+                the behavior of the prctl(PR_SET_PDEATHSIG) feature.
+
+2019-11-04
+        lib/error_functions.c
+                Wrap pragma that suppresses "gcc -Wformat-truncation" warning
+                with a check to test that the gcc(1) version supports that
+                pragma.  (Only in "dist" version of code.)
+
+2019-11-06
+        fileio/bad_exclusive_open.c
+                Fix a typo in a comment. (Only in "dist" version of code.)
+
+2019-11-08
+        namespaces/demo_userns.c
+        namespaces/demo_uts_namespaces.c
+        namespaces/multi_pidns.c
+        namespaces/ns_child_exec.c
+        namespaces/pidns_init_sleep.c
+        namespaces/userns_child_exec.c
+        namespaces/userns_setns_test.c
+        procexec/demo_clone.c
+                Instead of using malloc() to allocate the stack for the
+                child process, use mmap() to create a private, anonymous
+                mapping with the MAP_STACK flag, which is described in the
+                mmap(2) manual page thus:
+
+                    MAP_STACK (since Linux 2.6.27)
+                        Allocate the mapping at an address suitable for  a
+                        process or thread stack.  This flag is currently a
+                        no-op, but is used in the glibc  threading  imple‐
+                        mentation  so  that  if some architectures require
+                        special treatment for stack  allocations,  support
+                        can later be transparently implemented for glibc.
+
+                (Thanks to Christian Brauner.)
+
+2019-11-12
+        namespaces/demo_userns.c
+        namespaces/demo_uts_namespaces.c
+        namespaces/multi_pidns.c
+        namespaces/ns_child_exec.c
+        namespaces/pidns_init_sleep.c
+        namespaces/userns_child_exec.c
+        namespaces/userns_setns_test.c
+                Rename a variable (child_stack --> stack).
+
+2019-11-15
+        Makefile.inc
+                Add -Wimplicit-fallthrough in IMPL_CFLAGS.
+
+2019-11-18
+        timers/cpu_multithread_burner.c
+                Only include a gettid() wrapper if glibc version is < 2.30.
+
+2019-11-21
+        signals/catch_rtsigs.c
+                Declare flag set by signal handler as type 'sig-atomic_t'.
+
+2019-11-22
+        BUILDING
+                Note that libseccomp-dev{el} is needed to build some code.
+
+2019-11-30
+        cgroups/alloc_mem.c
+                Refactor memory allocation code into separate function.
+                Allow multiple threads to be created.
+
+2019-12-15
+        fileio/seek_io.c
+                Fix a sign extension problem for the 'R' command.
+                See the erratum for page 85.
+                (Thanks to Philippe Brodeur)
+
+2020-01-05
+        cap/t_cap_get_file.c
+                A simple demo program for cap_get_file(3).
+        cap/t_cap_get_pid.c
+                A simple demo program for cap_get_pid(3).
+        cap/t_cap_set_file.c
+                A simple demo program for cap_set_file(3).
+
+2020-01-14
+        filebuff/copy.c
+                Remove this source file, which was an accidental duplicate
+                of a file in the 'fileio' directory.
+        procexec/necho.c
+                Remove this source file, which was an accidental duplicate
+                of a file in the 'proc' directory.
+        fileio/copy.c
+                Change the error text written by the fatal() call that follows
+                write() to more clearly indicate that two different cases are
+                being dealt with here: error on write() and partial write.
+                (Thanks to Hrvoje Nikšić; see also the erratum for page 71.)
+
+2020-02-06
+        sockets/scm_cred_recv.c
+        sockets/scm_cred_send.c
+        sockets/scm_functions.c
+        sockets/scm_multi_recv.c
+        sockets/scm_multi_send.c
+        sockets/scm_rights_recv.c
+        sockets/scm_rights_send.c
+                Use memcpy() to transfer data to/from CMSG_DATA() address.
+                (After a manual pages bug report from Rich Felker.)
+
+2020-02-06
+        sockets/scm_functions.c
+        sockets/scm_functions.h
+                Rearrange header file includes.
+
+2020-02-17
+        namespaces/namespaces_of.go
+                Add support for time namespaces.
+                Some comment tweaks.
+        namespaces/unshare.c
+                Add support for time namespaces.
+        namespaces/userns_setns_test.c
+                Add missing '.' in printf() "%.*s".
+
+2020-04-01
+        timers/clock_times.c
+                A new program that displays the values of some POSIX clocks.
+                (Useful for time namespace experiments.)
+
+2020-04-07
+        namespaces/namespaces_of.go
+                Correctly handle kernels that don't support time namespaces.
+                Simplify code that discovers available namespace symlinks.
+
+2020-04-22
+        namespaces/userns_child_exec.c
+                Fix bug in handling of -b (securebits) option.
+                Add support for setting remaining securebits flags.
+                Change option letters used to turn on inheritable and ambient
+                capabilities (-h ==> -i; -a ==> -A).
+        lib/cap_functions.c
+                Add a function to display a securebits mask.
+        caps/show_secbits.c
+                Add a program that display the securebits flags.
+
+2020-04-24
+        namespaces/ns_exec.c
+                Add a '-f' option to do a fork() after setns().
+        namespaces/namespaces_of.go
+                Fix bug introduced on 2020-04-07, which caused the "--pidns"
+                option to cease working.
+
+2020-05-01
+        namespaces/userns_child_exec.c
+                Remove '-z' option (which was just a synonym for '-r').
+                Improve error diagnostics for -S option.
+
+2020-05-07
+        time/t_stime.c
+                Removed this program. stime(2) is a deprecated interface
+                that is no longer supported in recent versions of glibc.
+
+2020-06-29
+        inotify/inotify_dtree.c
+                Reformat some comments.
+
+2020-07-03
+        filelock/i_fcntl_locking.c
+        procexec/execlp.c
+                Minor white space changes in source code layout.
+
+2020-07-17
+        namespaces/ns_exec.c
+                Add a comment explaining use of O_CLOEXEC flag.
+
+2020-09-11
+        timers/t_clock_nanosleep.c
+                Remove unneeded cast to (long) when printing 'request.tv_nsec'.
+
+2020-09-11
+        sockets/scm_multi_recv.c
+                Minor tweak to a variable name.
+        cap/view_cap_xattr.c
+        scm_cred_recv.c
+        sockets/scm_cred_send.c
+        sockets/scm_multi_recv.c
+        sockets/scm_multi_send.c
+        sockets/scm_rights_recv.c
+        sockets/scm_rights_send.c
+                Use better % specifier when printing 'size_t'/'ssize_t'.
+
+2020-09-18
+        cgroups/alloc_mem.c
+                Reorder command-line arguments, allowing 'sleep-usecs' to be
+                optional.
+                Improve "Usage" message.
+        mmap/t_remap_file_pages.c
+                Replace "0" with "NULL" in call to mmap().
+        threads/prod_condvar.c
+        threads/prod_no_condvar.c
+                Use a more expressive function name (threadFunc ==> producer).
+        pmsg/mq_notify_siginfo.c
+        pmsg/mq_notify_via_signal.c
+        pmsg/mq_notify_via_thread.c
+                Use a better printf() specifier for printing 'ssize_t'.
+
+2020-09-30
+        seccomp/seccomp_user_notification.c
+                Quite a bit of a rewrite, including a fix required
+                by a user-space breakage caused by kernel commit
+                2882d53c9c6f3b8311d225062522f03772cf0179.
+
+2020-10-07
+        threads/Makefile
+                Remove 'strerror_test', 'strerror_test_tsd', and
+                'strerror_test_tls' from the targets built by "make all". These
+                targets rely on symbols ('_sys_nerr' and '_sys_errlist') that,
+                since version 2.32, are no longer exported by glibc, and will
+                result in errors if built on systems that have that glibc
+                version or later.
+
+2020-10-10
+        scm_cred_recv.c
+        scm_cred_send.c
+        scm_multi_recv.c
+        scm_multi_send.c
+        scm_rights_recv.c
+        scm_rights_send.c
+                Various minor code tweaks.
+
+2020-10-25
+        seccomp/seccomp_user_notification.c ==> seccomp/seccomp_unotify_mkdir.c
+                Further rewriting, and renaming of this program to something
+                a little less generic.

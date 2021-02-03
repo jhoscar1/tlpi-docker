@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -31,7 +31,7 @@ static int numBarriers;         /* Number of times the threads will
 static void *
 threadFunc(void *arg)
 {
-    int s, j, nsecs;
+    int s, nsecs;
     long threadNum = (long) arg;
 
     printf("Thread %ld started\n", threadNum);
@@ -46,7 +46,7 @@ threadFunc(void *arg)
        on the barrier. The loop terminates when each thread has passed
        the barrier 'numBarriers' times. */
 
-    for (j = 0; j < numBarriers; j++) {
+    for (int j = 0; j < numBarriers; j++) {
 
         nsecs = random() % 5 + 1;       /* Sleep for 1 to 5 seconds */
         sleep(nsecs);
@@ -110,7 +110,6 @@ int
 main(int argc, char *argv[])
 {
     int s, numThreads;
-    long threadNum;
     pthread_t *tid;
 
     if (argc != 3 || strcmp(argv[1], "--help") == 0)
@@ -135,7 +134,7 @@ main(int argc, char *argv[])
 
     /* Create 'numThreads' threads */
 
-    for (threadNum = 0; threadNum < numThreads; threadNum++) {
+    for (long threadNum = 0; threadNum < numThreads; threadNum++) {
         s = pthread_create(&tid[threadNum], NULL, threadFunc,
                 (void *) threadNum);
         if (s != 0)
@@ -151,7 +150,7 @@ main(int argc, char *argv[])
 
     /* Wait for all of the threads to terminate */
 
-    for (threadNum = 0; threadNum < numThreads; threadNum++) {
+    for (int threadNum = 0; threadNum < numThreads; threadNum++) {
         s = pthread_join(tid[threadNum], NULL);
         if (s != 0)
             errExitEN(s, "pthread_join");

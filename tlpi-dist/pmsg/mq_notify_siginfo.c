@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -34,32 +34,26 @@ static void
 handler(int sig, siginfo_t *si, void *ucontext)
 {
     gotSig = 1;
-    printf("Signaled: si_pid = %ld\n", (long) si->si_pid);      /* UNSAFE */
+    printf("Signaled: si_pid = %ld\n", (long) si->si_pid);
+                /* UNSAFE (see Section 21.1.2) */
 }
 
 int
 main(int argc, char *argv[])
 {
-    struct sigevent sev;
-    mqd_t mqd;
-    struct sigaction sa;
-    int j;
-    const int MAX_MSG_SIZE = 8192;
-    char msg[MAX_MSG_SIZE];
-    ssize_t numRead;
-
     if (argc != 2 || strcmp(argv[1], "--help") == 0)
         usageErr("%s /mq-name\n", argv[0]);
 
     /* Open the (existing) queue in nonblocking mode so that we can drain
        messages from it without blocking once the queue has been emptied */
 
-    mqd = mq_open(argv[1], O_RDONLY | O_NONBLOCK);
+    mqd_t mqd = mq_open(argv[1], O_RDONLY | O_NONBLOCK);
     if (mqd == (mqd_t) -1)
         errExit("mq_open");
 
     /* Establish handler for notification signal */
 
+    struct sigaction sa;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_SIGINFO;
     sa.sa_sigaction = handler;
@@ -71,8 +65,12 @@ main(int argc, char *argv[])
        program to make the initial registration for notification and force
        the queue to be drained of any messages on the first loop iteration. */
 
-    for (j = 0; ; j++) {
+    for (int j = 0; ; j++) {
         if (gotSig) {
+            struct sigevent sev;
+            const int MAX_MSG_SIZE = 8192;
+            char msg[MAX_MSG_SIZE];
+
             gotSig = 0;
 
             /* Register for message notification */
@@ -84,11 +82,12 @@ main(int argc, char *argv[])
 
             /* Drain all messages from the queue */
 
+            ssize_t numRead;
             while ((numRead = mq_receive(mqd, msg, MAX_MSG_SIZE,
                                          NULL)) >= 0) {
                 /* Do whatever processing is required for each message */
 
-                printf("Read %ld bytes\n", (long) numRead);
+                printf("Read %zd bytes\n", numRead);
             }
             if (errno != EAGAIN)        /* Unexpected error */
                 errExit("mq_receive");

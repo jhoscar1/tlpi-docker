@@ -4,14 +4,15 @@ PLEASE TAKE NOTE!
 If you have difficulty building the programs, then the problem is most
 likely one of the following:
 
-a) A configuration issue on your system (e.g., do you have the 'libacl'
-   library installed?).
+a) A configuration issue on your system (e.g., you may not have all of
+   the necessary libraries installed).
 b) You are using a system with an older Linux kernel or an older
    version of glibc. If this is so, your system may not provide a
    more recent system call or library function, or the glibc headers
    may not provide a needed function declaration or constant
    definition.
 
+Other than the notes on "Installing library dependencies" below,
 I can't really help with fixing these problems. However, do take
 a look at the online code FAQ (http://man7.org/tlpi/code/faq.html)
 for some frequently asked questions about the code. You may find
@@ -45,6 +46,32 @@ The methods described below involve the use of 'make'. If you need
 more information on 'make', try the command 'man make' or 'info make'.
 
 
+Installing library dependencies
+-------------------------------
+
+Various programs in the course code depend on libraries that may not
+be installed by default on your system. If you have build problems,
+then in the first instance you should make sure that the following
+libraries are installed.
+
+Debian, Ubuntu, and similar distributions:
+
+        libcap-dev
+        libacl1-dev
+        libselinux1-dev
+	libseccomp-dev
+
+RPM-based distributions (Fedora, OpenSUSE, CentOS, etc.):
+
+        libcap-devel
+        libacl-devel
+        libselinux-devel
+	libseccomp-devel
+
+If you are using Arch or Gentoo, then I'm sure you can work out what to
+do, based on the above information.
+
+
 Method A - Building all programs in all directories
 ---------------------------------------------------
 
@@ -53,7 +80,8 @@ Go into the 'tlpi' subdirectory, and type 'make':
         cd tlpi-xxxx
         make
 
-This will build all programs in all subdirectories.
+This will build all programs in (nearly) all subdirectories (a few
+subdirectories are excluded, as noted in the Makefile.)
 
 
 Method B - Build programs in individual directories
@@ -125,7 +153,7 @@ Instructions
         CFLAGS += -g -I${TLPI_INCL_DIR}
 
    The setting of LDLIBS is a bit harder to determine. As well as
-   listing the libary for this book, you should include '-l' linker
+   listing the library for this book, you should include '-l' linker
    options for any other libraries that the programs may need.
    For example, the following is suitable on Solaris 8:
 
@@ -144,3 +172,19 @@ Instructions
    The '-k' option tells 'make' to build as much as possible, so that if
    a particular program won't compile, 'make' goes on to attempt to
    build the remaining programs.
+
+
+Building the 'Go' example programs
+==================================
+
+All of the code published in TLPI is in C. However, since the book was
+written I have added a small number of examples in 'Go', related to topics
+that are not covered in TLPI (in particular, Linux namespaces). I chose
+to use Go for these programs as part of my own experimentation with
+learning the language, and also because it provides a richer set of data
+types (maps, in particular) and easier handling of strings, file I/O, and
+memory allocation; those features make the resulting programs simpler.
+
+The Makefiles do not build the Go programs. Instead, you will have to do
+this manually after installing a Go compiler (either the compiler provided
+by the Go project or the gccgo front end).

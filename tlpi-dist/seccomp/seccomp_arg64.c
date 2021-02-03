@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -12,7 +12,7 @@
 
 /* seccomp_arg64.c
 
-   Some system call arguments can be 64 bytes in size, for example pointers
+   Some system call arguments can be 64 bits in size, for example pointers
    and the 'off_t' argument of system calls such as lseek(). The
    'seccomp_data' structure allows for this: the elements of 'args' are each
    64 bits in size.  However, the BBF accumulator register is only 32 bits
@@ -20,7 +20,7 @@
    two pieces.  This program provides a simple example of how to do this.
 
    The program applies a seccomp filter that causes lseek() calls that
-   specify an 'offset' value greater tnan 1000 to fail with an error in
+   specify an 'offset' value greater than 1000 to fail with an error in
    'errno'. The error number varies, depending on whether or not there
    'offset' argument was bigger than 32 bits.
 
@@ -36,6 +36,19 @@
 #include <linux/seccomp.h>
 #include <sys/prctl.h>
 #include "tlpi_hdr.h"
+
+/* For the x32 ABI, all system call numbers have bit 30 set */
+
+#define X32_SYSCALL_BIT         0x40000000
+
+/* The following is a hack to allow for systems (pre-Linux 4.14) that don't
+   provide SECCOMP_RET_KILL_PROCESS, which kills (all threads in) a process.
+   On those systems, define SECCOMP_RET_KILL_PROCESS as SECCOMP_RET_KILL
+   (which simply kills the calling thread). */
+
+#ifndef SECCOMP_RET_KILL_PROCESS
+#define SECCOMP_RET_KILL_PROCESS SECCOMP_RET_KILL
+#endif
 
 static int
 seccomp(unsigned int operation, unsigned int flags, void *args)
@@ -53,15 +66,19 @@ install_filter(void)
         BPF_STMT(BPF_LD | BPF_W | BPF_ABS,
                 (offsetof(struct seccomp_data, arch))),
 
-        /* Kill process if the architecture is not what we expect */
+        /* Kill the process if the architecture is not what we expect */
 
-        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, AUDIT_ARCH_X86_64, 1, 0),
-        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL),
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, AUDIT_ARCH_X86_64, 0, 2),
 
         /* Load system call number */
 
         BPF_STMT(BPF_LD | BPF_W | BPF_ABS,
                  (offsetof(struct seccomp_data, nr))),
+
+        /* Kill the process if this is an x32 system call (bit 30 is set) */
+
+        BPF_JUMP(BPF_JMP | BPF_JGE | BPF_K, X32_SYSCALL_BIT, 0, 1),
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL_PROCESS),
 
         /* Allow system calls other than lseek() */
 
@@ -94,7 +111,7 @@ install_filter(void)
     };
 
     struct sock_fprog prog = {
-        .len = (unsigned short) (sizeof(filter) / sizeof(filter[0])),
+        .len = sizeof(filter) / sizeof(filter[0]),
         .filter = filter,
     };
 

@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -18,7 +18,7 @@
 
    Note: some UNIX implementations do not provide mincore().
 
-   The madvise() system call is upported on Linux since kernel 2.4.
+   The madvise() system call is supported on Linux since kernel 2.4.
 */
 #define _BSD_SOURCE             /* Get mincore() declaration and MAP_ANONYMOUS
                                    definition from <sys/mman.h> */
@@ -87,6 +87,7 @@ main(int argc, char *argv[])
 
     printf("Allocated %ld (%#lx) bytes starting at %p\n",
             (long) len, (unsigned long) len, addr);
+    /*FIXME: above: should use %zu here, and remove (long) cast */
 
     printf("Before mlock:\n");
     displayMincore(addr, len);

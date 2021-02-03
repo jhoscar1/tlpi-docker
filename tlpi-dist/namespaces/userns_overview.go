@@ -1,10 +1,15 @@
 /* userns_overview.go
 
-   Display a hierarchical view of the user namespaces on the
-   system along with the member processes for each namespace.
-   This requires features new in Linux 4.9. See the
-   namespaces(7) man page.
+   Display a hierarchical view of the user namespaces on the system
+   along with the member processes for each namespace.  This requires
+   features new in Linux 4.9. See the ioctl_ns(2) man page.
    (http://man7.org/linux/man-pages/man7/namespaces.7.html)
+
+   For an expanded version of this program, see namespaces_of.go.
+
+   Copyright (C) Michael Kerrisk, 2018
+
+   Licensed under GNU General Public License version 3 or later
 */
 
 package main
@@ -65,25 +70,21 @@ var initialNS NamespaceID
 // the user namespace file referred to by 'namespaceFD').
 
 func AddNamespace(namespaceFD int, pid int) NamespaceID {
-	//const NS_GET_USERNS = 0xb701
 	const NS_GET_PARENT = 0xb702 // ioctl() to get namespace parent
 	var sb syscall.Stat_t
-	var err error
 
-	// Obtain the device ID and inode number of the namespace
-	// file. These values together form the key for the 'NSList'
-	// map entry.
+	// Obtain the device ID and inode number of the namespace file.
+	// These values together form the key for the 'NSList' map entry.
 
-	err = syscall.Fstat(namespaceFD, &sb)
+	err := syscall.Fstat(namespaceFD, &sb)
 	if err != nil {
-		fmt.Println("syscall.Fstat(): ", err)
+		fmt.Println("syscall.Fstat():", err)
 		os.Exit(1)
 	}
 
-	ns := *new(NamespaceID)
-	ns = NamespaceID{sb.Dev, sb.Ino}
+	nsid := NamespaceID{sb.Dev, sb.Ino}
 
-	if _, fnd := NSList[ns]; fnd {
+	if _, fnd := NSList[nsid]; fnd {
 
 		// Namespace already exists; nothing to do
 
@@ -91,42 +92,40 @@ func AddNamespace(namespaceFD int, pid int) NamespaceID {
 
 		// Namespace entry does not yet exist; create it
 
-		np := new(NamespaceAttribs)
-		NSList[ns] = np
+		NSList[nsid] = new(NamespaceAttribs)
 
 		// Get file descriptor for parent user namespace
 
-		r, _, e := syscall.Syscall(syscall.SYS_IOCTL,
+		r, _, err := syscall.Syscall(syscall.SYS_IOCTL,
 			uintptr(namespaceFD), uintptr(NS_GET_PARENT), 0)
 		parentFD := (int)((uintptr)(unsafe.Pointer(r)))
 
 		if parentFD == -1 {
-			switch e {
+			switch err {
 			case syscall.EPERM:
 				// This is the initial NS; remember it
-				initialNS = ns
+				initialNS = nsid
 			case syscall.ENOTTY:
 				fmt.Println("This kernel doesn't support " +
-					"namespace introspection")
+					"namespace ioctl() operations")
 				os.Exit(1)
 			default:
 				// Unexpected error; bail
-				fmt.Println("ioctl()", e)
+				fmt.Println("ioctl():", err)
 				os.Exit(1)
 			}
-
 		} else {
 
 			// We have a parent user namespace; make sure it
 			// has an entry in the map. No need to add any
 			// PID for the parent entry.
 
-			par := AddNamespace(parentFD, -1)
+			p := AddNamespace(parentFD, -1)
 
-			// Make the current namespace entry ('ns') a child of
+			// Make the current namespace entry ('nsid') a child of
 			// the parent namespace entry
 
-			NSList[par].children = append(NSList[par].children, ns)
+			NSList[p].children = append(NSList[p].children, nsid)
 
 			syscall.Close(parentFD)
 		}
@@ -135,10 +134,10 @@ func AddNamespace(namespaceFD int, pid int) NamespaceID {
 	// Add PID to PID list for this namespace entry
 
 	if pid > 0 {
-		NSList[ns].pids = append(NSList[ns].pids, pid)
+		NSList[nsid].pids = append(NSList[nsid].pids, pid)
 	}
 
-	return ns
+	return nsid
 }
 
 // ProcessProcFile processes a single /proc/PID entry, creating
@@ -148,17 +147,15 @@ func AddNamespace(namespaceFD int, pid int) NamespaceID {
 // 'name' is the name of a PID directory under /proc.
 
 func ProcessProcFile(name string) {
-	var namespaceFD int
-	var err error
 
 	// Obtain a file descriptor that refers to the user namespace
 	// of this process
 
-	namespaceFD, err = syscall.Open("/proc/"+name+"/ns/user",
+	namespaceFD, err := syscall.Open("/proc/"+name+"/ns/user",
 		syscall.O_RDONLY, 0)
 
 	if namespaceFD < 0 {
-		fmt.Println("Open: ", namespaceFD, err)
+		fmt.Println("open():", err)
 		os.Exit(1)
 	}
 
@@ -170,33 +167,33 @@ func ProcessProcFile(name string) {
 }
 
 // DisplayNamespaceTree() recursively displays the namespace
-// tree rooted at 'ns'. 'level' is our current level in the
+// tree rooted at 'nsid'. 'level' is our current level in the
 // tree, and is used for producing suitably indented output.
 
-func DisplayNamespaceTree(ns NamespaceID, level int) {
+func DisplayNamespaceTree(nsid NamespaceID, level int) {
 
-	prefix := strings.Repeat(" ", level*4)
+	indent := strings.Repeat(" ", level*4)
 
 	// Display the namespace ID (device ID + inode number)
 
-	fmt.Print(prefix)
-	fmt.Println(ns)
+	fmt.Print(indent)
+	fmt.Println(nsid)
 
 	// Print a sorted list of the PIDs that are members of this
 	// namespace. We do a bit of a dance here to produce a list
 	// of PIDs that is suitably wrapped and indented, rather than
 	// a long single-line list.
 
-	sort.Ints(NSList[ns].pids)
-	base := len(prefix) + 25
+	sort.Ints(NSList[nsid].pids)
+	base := len(indent) + 25
 	col := base
-	for i, p := range NSList[ns].pids {
+	for i, p := range NSList[nsid].pids {
 		if i == 0 || col >= 80 && col > base+32 {
 			col = base
 			if i > 0 {
 				fmt.Println()
 			}
-			fmt.Print(prefix)
+			fmt.Print(indent)
 			fmt.Print("            ")
 			if i == 0 {
 				fmt.Print("PIDs: ")
@@ -211,25 +208,25 @@ func DisplayNamespaceTree(ns NamespaceID, level int) {
 
 	// Recursively display the child namespaces
 
-	for _, v := range NSList[ns].children {
+	for _, v := range NSList[nsid].children {
 		DisplayNamespaceTree(v, level+1)
 	}
 }
 
 func main() {
 
-	// Fetch a list of files from /proc
+	// Fetch a list of the filenames under /proc.
 
 	files, err := ioutil.ReadDir("/proc")
 	if err != nil {
-		fmt.Println("ioutil.Readdir(): ", err)
+		fmt.Println("ioutil.Readdir():", err)
 		os.Exit(1)
 	}
 
 	// Process each /proc/PID (PID starts with a digit)
 
 	for _, f := range files {
-		if f.Name()[0] >= '0' && f.Name()[0] <= '9' {
+		if f.Name()[0] >= '1' && f.Name()[0] <= '9' {
 			ProcessProcFile(f.Name())
 		}
 	}

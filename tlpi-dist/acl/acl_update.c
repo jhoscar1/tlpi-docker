@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -209,7 +209,7 @@ parseACL(char *aclStr, struct AccessControlEntry aclist[],
 }
 
 /* Find the the ACL entry in 'acl' corresponding to the tag type and
-   qualifier in 'tag' and 'id'. Return the matching entry, or NULL
+   qualifier in 'tag' and 'qual'. Return the matching entry, or NULL
    if no entry was found. */
 
 static acl_entry_t

@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -157,8 +157,7 @@ execlp(const char *filename, const char *arg, ...)
 
             /* Build complete pathname from path prefix and filename */
 
-            pathname = malloc(max(1, prEnd - prStart) + strlen(filename)
-                                + 2);
+            pathname = malloc(max(1, prEnd - prStart) + strlen(filename) + 2);
             pathname[0] = '\0';
             if (prEnd == prStart)       /* Last prefix */
                 strcat(pathname, ".");

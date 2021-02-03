@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -47,7 +47,7 @@ drainQueue(mqd_t mqd)
 
         /* Do whatever processing is required for message */
 
-        printf("Read %ld bytes\n", (long) numRead);
+        printf("Read %zd bytes\n", numRead);
     }
 
     if (errno != EAGAIN)                /* Unexpected error */

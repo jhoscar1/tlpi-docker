@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -47,7 +47,7 @@ main(int argc, char *argv[])
 
     system("od -a /tmp/tfile");
 
-    addr = mmap(0, 3 * pageSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    addr = mmap(NULL, 3 * pageSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (addr == MAP_FAILED)
         errExit("mmap");
 

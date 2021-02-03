@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -26,6 +26,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <stdio.h>
+#include <sys/mman.h>
 
 #ifndef CLONE_NEWCGROUP         /* Added in Linux 4.6 */
 #define CLONE_NEWCGROUP         0x02000000
@@ -69,7 +70,7 @@ main(int argc, char *argv[])
 {
     int flags, opt, verbose;
     pid_t child_pid;
-    char *child_stack;
+    char *stack;
 
     flags = 0;
     verbose = 0;
@@ -98,13 +99,14 @@ main(int argc, char *argv[])
     if (optind >= argc)
         usage(argv[0]);
 
-    child_stack = malloc(STACK_SIZE);
-    if (child_stack == NULL)
-        errExit("malloc");
+    stack = mmap(NULL, STACK_SIZE, PROT_READ | PROT_WRITE,
+                 MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
+    if (stack == MAP_FAILED)
+        errExit("mmap");
 
     child_pid = clone(childFunc,
-                    child_stack + STACK_SIZE,
-                    flags | SIGCHLD, &argv[optind]);
+                      stack + STACK_SIZE,
+                      flags | SIGCHLD, &argv[optind]);
     if (child_pid == -1)
         errExit("clone");
 

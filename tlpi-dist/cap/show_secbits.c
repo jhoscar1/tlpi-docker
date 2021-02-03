@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -8,34 +8,25 @@
 * the file COPYING.gpl-v3 for details.                                    *
 \*************************************************************************/
 
-/* sv_prog_complex.c
+/* Supplementary program for Chapter 39 */
 
+/* show_secbits.c
 */
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include <sys/prctl.h>
+#include "cap_functions.h"
+#include "tlpi_hdr.h"
 
-//void xxx(void) { printf("Hi there\n"); }
+int
+main(int argc, char *argv[])
+{
+    int secbits = prctl(PR_GET_SECUREBITS, 0, 0, 0, 0);
+    if (secbits == -1)
+        errExit("prctl");
 
-int main(int argc, char *argv[]) {
-    void xyz(void);
-    void xyz_old(void), xyz_new(void);
-    void abc(void);
+    printf("secbits = 0x%x => ", secbits);
 
-    printf("Calling abc()\n");
-    abc();
+    printSecbits(secbits, argc == 1, stdout);
+    printf("\n");
 
-    printf("Calling xyz()\n");
-    xyz();
-
-    printf("Calling xyz_new()\n");
-    xyz_new();
-
-    printf("Calling xyz_old()\n");
-    xyz_old();
-
-    //xxx();
-
-    exit(0);
+    exit(EXIT_SUCCESS);
 }
-//__asm__(".symver xyz_old,xyz@VER_1");

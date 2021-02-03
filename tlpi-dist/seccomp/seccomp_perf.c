@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -35,6 +35,19 @@
 #define errExit(msg)    do { perror(msg); exit(EXIT_FAILURE); \
                         } while (0)
 
+/* For the x32 ABI, all system call numbers have bit 30 set */
+
+#define X32_SYSCALL_BIT         0x40000000
+
+/* The following is a hack to allow for systems (pre-Linux 4.14) that don't
+   provide SECCOMP_RET_KILL_PROCESS, which kills (all threads in) a process.
+   On those systems, define SECCOMP_RET_KILL_PROCESS as SECCOMP_RET_KILL
+   (which simply kills the calling thread). */
+
+#ifndef SECCOMP_RET_KILL_PROCESS
+#define SECCOMP_RET_KILL_PROCESS SECCOMP_RET_KILL
+#endif
+
 static int
 seccomp(unsigned int operation, unsigned int flags, void *arg)
 {
@@ -51,15 +64,19 @@ install_filter(void)
         BPF_STMT(BPF_LD | BPF_W | BPF_ABS,
                 (offsetof(struct seccomp_data, arch))),
 
-        /* Kill process if the architecture is not what we expect */
+        /* Kill the process if the architecture is not what we expect */
 
-        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, AUDIT_ARCH_X86_64, 1, 0),
-        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL),
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, AUDIT_ARCH_X86_64, 0, 2),
 
         /* Load system call number */
 
         BPF_STMT(BPF_LD | BPF_W | BPF_ABS,
                  (offsetof(struct seccomp_data, nr))),
+
+        /* Kill the process if this is an x32 system call (bit 30 is set) */
+
+        BPF_JUMP(BPF_JMP | BPF_JGE | BPF_K, X32_SYSCALL_BIT, 0, 1),
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL_PROCESS),
 
         /* Allow system calls other than open() */
 
@@ -68,11 +85,11 @@ install_filter(void)
 
         /* Kill process on open() */
 
-        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL)
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL_PROCESS)
     };
 
     struct sock_fprog prog = {
-        .len = (unsigned short) (sizeof(filter) / sizeof(filter[0])),
+        .len = sizeof(filter) / sizeof(filter[0]),
         .filter = filter,
     };
 
@@ -83,7 +100,7 @@ install_filter(void)
 int
 main(int argc, char *argv[])
 {
-    int j, nloops;
+    int nloops;
 
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <num-loops> [x]\n", argv[0]);
@@ -92,7 +109,7 @@ main(int argc, char *argv[])
     }
 
     if (argc > 2) {
-        printf("Appling BPF filter\n");
+        printf("Applying BPF filter\n");
 
         if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0))
             errExit("prctl");
@@ -102,7 +119,7 @@ main(int argc, char *argv[])
 
     nloops = atoi(argv[1]);
 
-    for (j = 0; j < nloops; j++)
+    for (int j = 0; j < nloops; j++)
         getppid();
 
     exit(EXIT_SUCCESS);

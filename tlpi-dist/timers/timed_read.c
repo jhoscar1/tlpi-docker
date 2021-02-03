@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -64,6 +64,7 @@ main(int argc, char *argv[])
     } else {
         printf("Successful read (%ld bytes): %.*s",
                 (long) numRead, (int) numRead, buf);
+        /*FIXME: above: should use %zd here, and remove (long) cast */
     }
 
     exit(EXIT_SUCCESS);

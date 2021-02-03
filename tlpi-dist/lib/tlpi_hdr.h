@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU Lesser General Public License as published   *
@@ -24,6 +24,7 @@
 #include <unistd.h>     /* Prototypes for many system calls */
 #include <errno.h>      /* Declares errno and defines error constants */
 #include <string.h>     /* Commonly used string-handling functions */
+#include <stdbool.h>    /* 'bool' type plus 'true' and 'false' constants */
 
 #include "get_num.h"    /* Declares our functions for handling numeric
                            arguments (getInt(), getLong()) */

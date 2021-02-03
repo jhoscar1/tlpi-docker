@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/mman.h>
 
 #define errExit(msg)    do { perror(msg); exit(EXIT_FAILURE); \
                         } while (0)
@@ -68,16 +69,17 @@ int
 main(int argc, char *argv[])
 {
     pid_t pid;
-    char *child_stack;
+    char *stack;
 
-    child_stack = malloc(STACK_SIZE);
-    if (child_stack == NULL)
-        errExit("malloc");
+    stack = mmap(NULL, STACK_SIZE, PROT_READ | PROT_WRITE,
+                 MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
+    if (stack == MAP_FAILED)
+        errExit("mmap");
 
     /* Create child; child commences execution in childFunc() */
 
-    pid = clone(childFunc, child_stack + STACK_SIZE,    /* Assume stack
-                                                           grows downward */
+    pid = clone(childFunc,
+                stack + STACK_SIZE,     /* Assume stack grows downward */
                 CLONE_NEWUSER | SIGCHLD, argv[1]);
     if (pid == -1)
         errExit("clone");

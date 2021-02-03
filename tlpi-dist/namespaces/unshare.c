@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -28,6 +28,10 @@
 #define CLONE_NEWCGROUP         0x02000000
 #endif
 
+#ifndef CLONE_NEWTIME           /* Added in Linux 5.6 */
+#define CLONE_NEWTIME           0x00000080
+#endif
+
 /* A simple error-handling function: print an error message based
    on the value in 'errno' and terminate the calling process */
 
@@ -46,6 +50,7 @@ usage(char *pname)
     fprintf(stderr, "    -m   unshare mount namespace\n");
     fprintf(stderr, "    -n   unshare network namespace\n");
     fprintf(stderr, "    -p   unshare PID namespace\n");
+    fprintf(stderr, "    -T   unshare time namespace\n");
     fprintf(stderr, "    -u   unshare UTS namespace\n");
     fprintf(stderr, "    -U   unshare user namespace\n");
     exit(EXIT_FAILURE);
@@ -58,7 +63,7 @@ main(int argc, char *argv[])
 
     flags = 0;
     do_fork = 0;
-    while ((opt = getopt(argc, argv, "CfimnpuU")) != -1) {
+    while ((opt = getopt(argc, argv, "CfimnpTuU")) != -1) {
         switch (opt) {
         case 'f': do_fork = 1;                  break;
         case 'C': flags |= CLONE_NEWCGROUP;     break;
@@ -66,6 +71,7 @@ main(int argc, char *argv[])
         case 'm': flags |= CLONE_NEWNS;         break;
         case 'n': flags |= CLONE_NEWNET;        break;
         case 'p': flags |= CLONE_NEWPID;        break;
+        case 'T': flags |= CLONE_NEWTIME;       break;
         case 'u': flags |= CLONE_NEWUTS;        break;
         case 'U': flags |= CLONE_NEWUSER;       break;
         default:  usage(argv[0]);

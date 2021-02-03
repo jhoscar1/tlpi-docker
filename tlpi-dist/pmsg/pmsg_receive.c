@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -73,6 +73,7 @@ main(int argc, char *argv[])
         errExit("mq_receive");
 
     printf("Read %ld bytes; priority = %u\n", (long) numRead, prio);
+    /*FIXME: above: should use %zd here, and remove (long) cast */
     if (write(STDOUT_FILENO, buffer, numRead) == -1)
         errExit("write");
     write(STDOUT_FILENO, "\n", 1);

@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -42,7 +42,6 @@ main(int argc, char *argv[])
     struct sigevent sev;
     mqd_t mqd;
     struct sigaction sa;
-    int j;
     char *msg;
     ssize_t numRead;
     struct mq_attr attr;
@@ -80,7 +79,7 @@ main(int argc, char *argv[])
        program to make the initial registration for notification and force
        the queue to be drained of any messages on the first loop iteration. */
 
-    for (j = 0; ; j++) {
+    for (int j = 0; ; j++) {
         if (gotSig) {
             gotSig = 0;
 
@@ -97,7 +96,7 @@ main(int argc, char *argv[])
                                 attr.mq_msgsize, NULL)) >= 0) {
                 /* Do whatever processing is required for each message */
 
-                printf("Read %ld bytes\n", (long) numRead);
+                printf("Read %zd bytes\n", numRead);
             }
             if (errno != EAGAIN)        /* Unexpected error */
                 errExit("mq_receive");

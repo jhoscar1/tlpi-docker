@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -25,6 +25,19 @@
 #include <sys/prctl.h>
 #include "tlpi_hdr.h"
 
+/* For the x32 ABI, all system call numbers have bit 30 set */
+
+#define X32_SYSCALL_BIT         0x40000000
+
+/* The following is a hack to allow for systems (pre-Linux 4.14) that don't
+   provide SECCOMP_RET_KILL_PROCESS, which kills (all threads in) a process.
+   On those systems, define SECCOMP_RET_KILL_PROCESS as SECCOMP_RET_KILL
+   (which simply kills the calling thread). */
+
+#ifndef SECCOMP_RET_KILL_PROCESS
+#define SECCOMP_RET_KILL_PROCESS SECCOMP_RET_KILL
+#endif
+
 static int
 seccomp(unsigned int operation, unsigned int flags, void *args)
 {
@@ -42,13 +55,17 @@ install_filter(void)
 
         /* Kill the process if the architecture is not what we expect */
 
-        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, AUDIT_ARCH_X86_64, 1, 0),
-        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL),
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, AUDIT_ARCH_X86_64, 0, 2),
 
         /* Load system call number */
 
         BPF_STMT(BPF_LD | BPF_W | BPF_ABS,
                  (offsetof(struct seccomp_data, nr))),
+
+        /* Kill the process if this is an x32 system call (bit 30 is set) */
+
+        BPF_JUMP(BPF_JMP | BPF_JGE | BPF_K, X32_SYSCALL_BIT, 0, 1),
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL_PROCESS),
 
         /* Allow syscalls other than open() and openat() */
 
@@ -75,15 +92,14 @@ install_filter(void)
         /* Kill the process if O_CREAT was specified */
 
         BPF_JUMP(BPF_JMP | BPF_JSET | BPF_K, O_CREAT, 0, 1),
-        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL),
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL_PROCESS),
 
         /* Give ENOTSUP error on attempt to open for writing.
            Relies on the fact that O_RDWR and O_WRONLY are
            defined as single, nonoverlapping bits  */
 
         BPF_JUMP(BPF_JMP | BPF_JSET | BPF_K, O_WRONLY | O_RDWR, 0, 1),
-        BPF_STMT(BPF_RET | BPF_K,
-                 SECCOMP_RET_ERRNO | (ENOTSUP & SECCOMP_RET_DATA)),
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ERRNO | ENOTSUP),
 
         /* Otherwise allow the open()/openat() */
 
@@ -91,7 +107,7 @@ install_filter(void)
     };
 
     struct sock_fprog prog = {
-        .len = (unsigned short) (sizeof(filter) / sizeof(filter[0])),
+        .len = sizeof(filter) / sizeof(filter[0]),
         .filter = filter,
     };
 

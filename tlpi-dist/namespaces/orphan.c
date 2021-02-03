@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -19,6 +19,11 @@
    whose PID is 1) when its parent exits.
 
    See https://lwn.net/Articles/532748/
+
+   Change history:
+   2019-02-15   Changes to allow for the fact that on systems with a modern
+                init(1) (e.g., systemd), an orphaned child may be adopted
+                by a "child subreaper" process whose PID is not 1.
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,7 +32,9 @@
 int
 main(int argc, char *argv[])
 {
-    pid_t pid;
+    pid_t pid, ppidOrig;
+
+    ppidOrig = getpid();
 
     pid = fork();
     if (pid == -1) {
@@ -47,7 +54,7 @@ main(int argc, char *argv[])
 
     do {
         usleep(100000);
-    } while (getppid() != 1);           /* Am I an orphan yet? */
+    } while (getppid() == ppidOrig);            /* Am I an orphan yet? */
 
     printf("\nChild  (PID=%ld) now an orphan (parent PID=%ld)\n",
             (long) getpid(), (long) getppid());

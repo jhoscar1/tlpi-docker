@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -19,43 +19,44 @@
 
    Usage is as shown in the usageErr() call below.
 
-   Credentials can exchanged over stream or datagram sockets. This program
+   Credentials can be exchanged over stream or datagram sockets. This program
    uses stream sockets by default; the "-d" command-line option specifies
    that datagram sockets should be used instead.
 
    This program is Linux-specific.
+
+   See also scm_multi_recv.c.
 */
 #include "scm_cred.h"
 
 int
 main(int argc, char *argv[])
 {
+    int sfd, opt;
     struct msghdr msgh;
     struct iovec iov;
-    struct ucred *ucredp, ucred;
-    int data, lfd, sfd, optval, opt;
-    ssize_t nr;
-    Boolean useDatagramSocket;
 
     /* Allocate a char array of suitable size to hold the ancillary data.
        However, since this buffer is in reality a 'struct cmsghdr', use a
-       union to ensure that it is aligned as required for that structure. */
+       union to ensure that it is aligned as required for that structure.
+       Alternatively, we could allocate the buffer using malloc(), which
+       returns a buffer that satisfies the strictest alignment
+       requirements of any type */
+
     union {
-        struct cmsghdr cmh;
-        char   control[CMSG_SPACE(sizeof(struct ucred))];
-                        /* Space large enough to hold a ucred structure */
-    } control_un;
-    struct cmsghdr *cmhp;
-    socklen_t len;
+        char   buf[CMSG_SPACE(sizeof(struct ucred))];
+                        /* Space large enough to hold a 'ucred' structure */
+        struct cmsghdr align;
+    } controlMsg;
 
-    /* Parse command-line arguments */
+    /* Parse command-line options */
 
-    useDatagramSocket = FALSE;
+    bool useDatagramSocket = false;
 
     while ((opt = getopt(argc, argv, "d")) != -1) {
         switch (opt) {
         case 'd':
-            useDatagramSocket = TRUE;
+            useDatagramSocket = true;
             break;
 
         default:
@@ -64,22 +65,24 @@ main(int argc, char *argv[])
         }
     }
 
-    /* Create socket bound to well-known address */
+    /* Create socket bound to a well-known address. In the case where
+       we are using stream sockets, also make the socket a listening
+       socket and accept a connection on the socket. */
 
     if (remove(SOCK_PATH) == -1 && errno != ENOENT)
         errExit("remove-%s", SOCK_PATH);
 
     if (useDatagramSocket) {
-        printf("Receiving via datagram socket\n");
         sfd = unixBind(SOCK_PATH, SOCK_DGRAM);
         if (sfd == -1)
             errExit("unixBind");
-
     } else {
-        printf("Receiving via stream socket\n");
-        lfd = unixListen(SOCK_PATH, 5);
+        int lfd = unixBind(SOCK_PATH, SOCK_STREAM);
         if (lfd == -1)
-            errExit("unixListen");
+            errExit("unixBind");
+
+        if (listen(lfd, 5) == -1)
+            errExit("listen");
 
         sfd = accept(lfd, NULL, NULL);
         if (sfd == -1)
@@ -89,65 +92,78 @@ main(int argc, char *argv[])
     /* We must set the SO_PASSCRED socket option in order to receive
        credentials */
 
-    optval = 1;
+    int optval = 1;
     if (setsockopt(sfd, SOL_SOCKET, SO_PASSCRED, &optval, sizeof(optval)) == -1)
         errExit("setsockopt");
 
-    /* Set 'control_un' to describe ancillary data that we want to receive */
+    /* The 'msg_name' field can be set to point to a buffer where the
+       kernel will place the address of the peer socket. However, we don't
+       need the address of the peer, so we set this field to NULL. */
 
-    control_un.cmh.cmsg_len = CMSG_LEN(sizeof(struct ucred));
-    control_un.cmh.cmsg_level = SOL_SOCKET;
-    control_un.cmh.cmsg_type = SCM_CREDENTIALS;
-
-    /* Set 'msgh' fields to describe 'control_un' */
-
-    msgh.msg_control = control_un.control;
-    msgh.msg_controllen = sizeof(control_un.control);
+    msgh.msg_name = NULL;
+    msgh.msg_namelen = 0;
 
     /* Set fields of 'msgh' to point to buffer used to receive (real)
        data read by recvmsg() */
 
+    int data;
     msgh.msg_iov = &iov;
     msgh.msg_iovlen = 1;
     iov.iov_base = &data;
-    iov.iov_len = sizeof(int);
+    iov.iov_len = sizeof(data);
 
-    msgh.msg_name = NULL;               /* We don't need address of peer */
-    msgh.msg_namelen = 0;
+    /* Set 'msgh' fields to describe the ancillary data buffer */
+
+    msgh.msg_control = controlMsg.buf;
+    msgh.msg_controllen = sizeof(controlMsg.buf);
 
     /* Receive real plus ancillary data */
 
-    nr = recvmsg(sfd, &msgh, 0);
+    ssize_t nr = recvmsg(sfd, &msgh, 0);
     if (nr == -1)
         errExit("recvmsg");
-    printf("recvmsg() returned %ld\n", (long) nr);
+    printf("recvmsg() returned %zd\n", nr);
 
     if (nr > 0)
         printf("Received data = %d\n", data);
 
-    /* Extract credentials information from received ancillary data */
+    /* Get the address of the first 'cmsghdr' in the received
+       ancillary data */
 
-    cmhp = CMSG_FIRSTHDR(&msgh);
-    if (cmhp == NULL || cmhp->cmsg_len != CMSG_LEN(sizeof(struct ucred)))
+    struct cmsghdr *cmsgp = CMSG_FIRSTHDR(&msgh);
+
+    /* Check the validity of the 'cmsghdr' */
+
+    if (cmsgp == NULL || cmsgp->cmsg_len != CMSG_LEN(sizeof(struct ucred)))
         fatal("bad cmsg header / message length");
-    if (cmhp->cmsg_level != SOL_SOCKET)
+    if (cmsgp->cmsg_level != SOL_SOCKET)
         fatal("cmsg_level != SOL_SOCKET");
-    if (cmhp->cmsg_type != SCM_CREDENTIALS)
+    if (cmsgp->cmsg_type != SCM_CREDENTIALS)
         fatal("cmsg_type != SCM_CREDENTIALS");
 
-    ucredp = (struct ucred *) CMSG_DATA(cmhp);
+    /* Copy the contents of the data field of the 'cmsghdr' to a
+       'struct ucred'. */
+
+    struct ucred rcred, scred;
+
+    memcpy(&rcred, CMSG_DATA(cmsgp), sizeof(struct ucred));
+
+    /* Display the credentials from the received data area */
+
     printf("Received credentials pid=%ld, uid=%ld, gid=%ld\n",
-                (long) ucredp->pid, (long) ucredp->uid, (long) ucredp->gid);
+                (long) rcred.pid, (long) rcred.uid, (long) rcred.gid);
 
     /* The Linux-specific, read-only SO_PEERCRED socket option returns
-       credential information about the peer, as described in socket(7) */
+       credential information about the peer, as described in socket(7).
+       This operation can be performed on UNIX domain stream sockets and on
+       UNIX domain sockets (stream or datagram) created with socketpair(). */
 
-    len = sizeof(struct ucred);
-    if (getsockopt(sfd, SOL_SOCKET, SO_PEERCRED, &ucred, &len) == -1)
+    socklen_t len = sizeof(struct ucred);
+    if (getsockopt(sfd, SOL_SOCKET, SO_PEERCRED, &scred, &len) == -1)
         errExit("getsockopt");
 
     printf("Credentials from SO_PEERCRED: pid=%ld, euid=%ld, egid=%ld\n",
-            (long) ucred.pid, (long) ucred.uid, (long) ucred.gid);
+            (long) scred.pid, (long) scred.uid, (long) scred.gid);
 
     exit(EXIT_SUCCESS);
 }

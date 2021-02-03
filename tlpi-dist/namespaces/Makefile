@@ -3,14 +3,17 @@ include ../Makefile.inc
 GEN_EXE = orphan 
 
 LINUX_EXE = \
+	    cred_launcher \
 	    demo_userns \
 	    demo_uts_namespaces \
 	    hostname \
 	    multi_pidns \
+	    ns_capable \
 	    ns_child_exec \
 	    ns_exec \
 	    ns_run \
 	    pidns_init_sleep \
+	    show_creds \
 	    simple_init \
 	    t_setns_userns \
 	    unshare \
@@ -29,19 +32,8 @@ clean :
 showall :
 	@ echo ${EXE}
 
-demo_userns: demo_userns.o
-	${CC} -o $@ demo_userns.o ${CFLAGS} ${LDLIBS} ${LINUX_LIBCAP}
+# Many of the programs here need libcap
 
-t_setns_userns: t_setns_userns.o
-	${CC} -o $@ t_setns_userns.o ${CFLAGS} ${LDLIBS} ${LINUX_LIBCAP}
-
-unshare: unshare.o
-	${CC} -o $@ unshare.o ${CFLAGS} ${LDLIBS} ${LINUX_LIBCAP}
-
-userns_child_exec: userns_child_exec.o
-	${CC} -o $@ userns_child_exec.o ${CFLAGS} ${LDLIBS} ${LINUX_LIBCAP}
-
-userns_setns_test: userns_setns_test.o
-	${CC} -o $@ userns_setns_test.o ${CFLAGS} ${LDLIBS} ${LINUX_LIBCAP}
+LDLIBS = ${IMPL_LDLIBS} ${LINUX_LIBCAP}
 
 ${EXE} : ${TLPI_LIB}		# True as a rough approximation

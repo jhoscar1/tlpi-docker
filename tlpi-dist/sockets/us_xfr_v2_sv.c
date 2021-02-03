@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -28,9 +28,12 @@ main(int argc, char *argv[])
     ssize_t numRead;
     char buf[BUF_SIZE];
 
-    sfd = unixListen(SV_SOCK_PATH, 5);
+    sfd = unixBind(SV_SOCK_PATH, SOCK_STREAM);
     if (sfd == -1)
-        errExit("unixListen");
+        errExit("unixBind");
+
+    if (listen(sfd, 5) == -1)
+        errExit("listen");
 
     for (;;) {          /* Handle client connections iteratively */
         cfd = accept(sfd, NULL, NULL);

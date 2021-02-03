@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -14,7 +14,7 @@
 
    The following code shows why we need the open() O_EXCL flag.
 
-   This program tries ensure that it is the one that creates the file
+   This program to tries ensure that it is the one that creates the file
    named in its command-line argument. It does this by trying to open()
    the filename once without the O_CREAT flag (if this open() succeeds
    then the program know it is not the creator of the file), and if
@@ -55,6 +55,7 @@ main(int argc, char *argv[])
             if (fd == -1)
                 errExit("open");
 
+            /*FIXME: should use %zd here, and remove (long) cast */
             printf("[PID %ld] Created file \"%s\" exclusively\n",
                     (long) getpid(), argv[1]);          /* MAY NOT BE TRUE! */
         }

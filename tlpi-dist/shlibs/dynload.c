@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -57,9 +57,15 @@ main(int argc, char *argv[])
        to support casts of the more natural form (now) used in the code
        above. However, various current compilers (e.g., gcc with the
        '-pedantic' flag) may still complain about such casts. Therefore,
-       we use a gcc pragma to disable the warning (note that this pragma
-       is available only since gcc 4.6, released in 2010). See also the
-       erratum note for page 864 at http://www.man7.org/tlpi/errata/. */
+       we use a gcc pragma to disable the warning.
+
+       Note that this pragma is available only since gcc 4.6, released in
+       2010. If you are using an older compiler, the pragma will generate
+       an error. In that case, simply edit this program to remove the
+       lines above that begin with '#pragma".
+
+       See also the erratum note for page 864 at
+       http://www.man7.org/tlpi/errata/. */
 
     err = dlerror();
     if (err != NULL)

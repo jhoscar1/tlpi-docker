@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -125,6 +125,7 @@ main(int argc, char *argv[])
     int usecs;
     char *stopFile;
     int scnt;
+    int s;
 
     opcnt = 0;
 
@@ -189,11 +190,10 @@ main(int argc, char *argv[])
 
             scnt = 1;
             while ((random() % 3) < 2) {
-
-                snprintf(spath, sizeof(path), "%s/%ld%s%s%d_%d", path,
+                s = snprintf(spath, sizeof(path), "%s/%ld%s%s%d_%d", path,
                         (long) getpid() % 100,
                         MARKER_STRING, "scr", scnt, opcnt);
-                if (strlen(spath) > DLIM)
+                if (s > DLIM)
                     break;
 
                 if (mkdir(spath, 0700) == 0)
@@ -236,11 +236,12 @@ main(int argc, char *argv[])
                 p = strstr(tfile, "__ren");
                 if (p != NULL)
                     *p = '\0';
-                snprintf(target, sizeof(target), "%s/%s__ren%04d-%ld",
+
+                s = snprintf(target, sizeof(target), "%s/%s__ren%04d-%ld",
                         dirList[random() % dcnt],
                         tfile, opcnt, (long) getpid());
 
-                if (strlen(target) > DLIM)
+                if (s > DLIM)
                     break;
 
                 if (rename(to_move, target) == 0)

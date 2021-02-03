@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -43,6 +43,7 @@ main(int argc, char *argv[])
     if (strlen(argv[1]) > sizeof(req.pathname) - 1)
         cmdLineErr("pathname too long (max: %ld bytes)\n",
                 (long) sizeof(req.pathname) - 1);
+    /*FIXME: above: should use %zu here, and remove (long) cast */
 
     /* Get server's queue identifier; create queue for response */
 
@@ -92,6 +93,8 @@ main(int argc, char *argv[])
     }
 
     printf("Received %ld bytes (%d messages)\n", (long) totBytes, numMsgs);
+    /*FIXME: above: should use %zd here, and remove (long) cast (or perhaps
+       better, make totBytes size_t, and use %zu)*/
 
     exit(EXIT_SUCCESS);
 }

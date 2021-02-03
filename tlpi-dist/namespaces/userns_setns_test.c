@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -31,6 +31,7 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <sys/capability.h>
+#include <sys/mman.h>
 #include "userns_functions.h"
 
 /* A simple error-handling function: print an error message based
@@ -49,7 +50,7 @@ display_symlink(char *pname, char *link)
     if (s == -1)
         errExit("readlink");
 
-    printf("%s%s ==> %s\n", pname, link, path);
+    printf("%s%s ==> %.*s\n", pname, link, (int) s, path);
 }
 
 /* Try to join the user namespace identified by the file
@@ -95,10 +96,10 @@ main(int argc, char *argv[])
 {
     pid_t child_pid;
     long fd;
-    char *child_stack;
+    char *stack;
 
     if (argc != 2) {
-        fprintf(stderr, "Usage: %s /proc/PID/ns/user]\n", argv[0]);
+        fprintf(stderr, "Usage: %s /proc/PID/ns/user\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
@@ -110,11 +111,13 @@ main(int argc, char *argv[])
 
     /* Create child process in new user namespace */
 
-    child_stack = malloc(STACK_SIZE);
-    if (child_stack == NULL)
-        errExit("malloc");
+    stack = mmap(NULL, STACK_SIZE, PROT_READ | PROT_WRITE,
+                 MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
+    if (stack == MAP_FAILED)
+        errExit("mmap");
 
-    child_pid = clone(childFunc, child_stack + STACK_SIZE,
+    child_pid = clone(childFunc,
+                      stack + STACK_SIZE, /* Assume stack grows downward */
                       CLONE_NEWUSER | SIGCHLD, (void *) fd);
     if (child_pid == -1)
         errExit("clone");

@@ -1,5 +1,5 @@
 /*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2017.                   *
+*                  Copyright (C) Michael Kerrisk, 2020.                   *
 *                                                                         *
 * This program is free software. You may use, modify, and redistribute it *
 * under the terms of the GNU General Public License as published by the   *
@@ -69,10 +69,9 @@ static char **
 expand_words(char *cmd)
 {
     char **arg_vec;
-    int s;
     wordexp_t pwordexp;
 
-    s = wordexp(cmd, &pwordexp, 0);
+    int s = wordexp(cmd, &pwordexp, 0);
     if (s != 0) {
         fprintf(stderr, "Word expansion failed.\n"
                         "\tNote that only simple "
@@ -85,8 +84,8 @@ expand_words(char *cmd)
     if (arg_vec == NULL)
         errExit("calloc");
 
-    for (s = 0; s < pwordexp.we_wordc; s++)
-        arg_vec[s] = pwordexp.we_wordv[s];
+    for (int j = 0; j < pwordexp.we_wordc; j++)
+        arg_vec[j] = pwordexp.we_wordv[j];
 
     arg_vec[pwordexp.we_wordc] = NULL;
 
@@ -138,6 +137,7 @@ main(int argc, char *argv[])
        signal, which allows the operations to proceed successfully. */
 
     signal(SIGTTOU, SIG_IGN);
+
     /* Become leader of a new process group and make that process
        group the foreground process group for the terminal */
 
@@ -155,7 +155,7 @@ main(int argc, char *argv[])
            propagate to other namespaces. If we were mounting the
            procfs for this new PID namespace at "/proc" (which is typical),
            then this would hide the original "/proc" mount point in the
-           intial namespace, which we probably don't want, since it will
+           initial namespace, which we probably don't want, since it will
            confuse a lot of system tools. To prevent propagation from
            occurring, we need to mark the mount point either as a slave
            mount or as a private mount.
